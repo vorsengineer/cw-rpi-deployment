@@ -11,7 +11,7 @@ This repository contains implementation plans and automation scripts for a **Ras
 **Target Environment:**
 - Management Network: 192.168.101.x subnet (VLAN 101)
 - Deployment Network: 192.168.151.0/24 subnet (VLAN 151)
-- Deployment Server Management IP: 192.168.101.20
+- Deployment Server Management IP: 192.168.101.146
 - Deployment Server Deployment IP: 192.168.151.1
 - Device Type: Raspberry Pi 5 with dual camera setup
 - Platform: Ubuntu 24.04 LTS on Proxmox VM
@@ -20,7 +20,9 @@ This repository contains implementation plans and automation scripts for a **Ras
 **Current Status**:
 - **Phase 1**: ✅ COMPLETE (VM provisioned at 192.168.101.146)
 - **Phase 2**: ✅ COMPLETE (Server configured, Git initialized)
-- **Phase 3**: ⏳ Ready to Start (DHCP and TFTP Configuration)
+- **Phase 3**: ✅ COMPLETE (DHCP and TFTP configured, 34/34 tests passed)
+- **Phase 4**: ✅ COMPLETE (Boot files ready, simplified design - no iPXE needed)
+- **Phase 5**: ⏳ CURRENT (HTTP Server Configuration)
 - See `@CURRENT_PHASE.md` for quick reference
 
 **Documentation Structure**:
@@ -39,16 +41,17 @@ This repository contains implementation plans and automation scripts for a **Ras
    - Management Interface: 192.168.101.146 (VLAN 101) - Web UI and administration
    - Deployment Interface: 192.168.151.1 (VLAN 151) - Isolated deployment network
    - DHCP Server (dnsmasq) - assigns IPs (192.168.151.100-250) on deployment network
-   - TFTP Server (tftpd-hpa) - serves boot files
+   - TFTP Server (dnsmasq built-in) - serves boot files from /tftpboot
    - HTTP Server (nginx) - distributes master images
    - Flask Web Interface (port 5000) - management dashboard
    - Flask Deployment API (port 5001) - deployment operations
    - SQLite Database - hostname pool and deployment tracking
 
 2. **Network Boot Process**
-   - Pi boots from network using PXE/iPXE on VLAN 151
+   - Pi 5 boots from network using native UEFI network boot on VLAN 151
    - Receives IP from deployment server DHCP (192.168.151.100-250)
-   - Downloads minimal installer environment via TFTP
+   - DHCP provides Option 43 ("Raspberry Pi Boot") for Pi 5 bootloader recognition
+   - Downloads boot files (config.txt, kernel, dtb) via TFTP
    - Requests hostname assignment from server (product/venue based)
    - Downloads appropriate master image (KXP2 or RXP2) via HTTP
    - Image is written to local SD card with assigned hostname
@@ -133,11 +136,12 @@ Automates deployment server VM creation on Proxmox:
 ├── docs/                      # Project documentation
 └── ssh_keys/                  # SSH keys for server access
 
-/tftpboot/
-├── bootfiles/                 # iPXE boot scripts and files
-├── bootcode.bin              # Raspberry Pi boot files
-├── start*.elf                # Firmware files
-└── fixup*.dat                # Firmware files
+/tftpboot/                     # TFTP root for network boot files
+├── config.txt                 # Raspberry Pi 5 boot configuration
+├── cmdline.txt                # Kernel command line parameters
+├── kernel8.img                # ARM64 Linux kernel (9.5MB)
+├── bcm2712-rpi-5-b.dtb       # Device tree for Raspberry Pi 5
+└── README_PHASE4.txt          # Boot files documentation
 
 /var/www/deployment/           # Nginx web root
 ```
@@ -150,7 +154,7 @@ The project has specialized agents for different technical domains. **Use these 
 
 **For DHCP/TFTP Configuration (Phase 3):**
 - **@linux-ubuntu-specialist** - Primary agent for dnsmasq configuration, systemd services, network optimization
-- **@research-documentation-specialist** - Look up dnsmasq, TFTP, and iPXE documentation
+- **@research-documentation-specialist** - Look up dnsmasq, TFTP, and Raspberry Pi boot documentation
 
 **For HTTP Server & Python Development (Phases 5-8):**
 - **@nginx-config-specialist** - Nginx reverse proxy, dual-network setup, static file serving
@@ -187,7 +191,7 @@ Assistant: "I'm going to use the @linux-ubuntu-specialist agent for this Linux s
 ### Check Server Status
 ```bash
 # Check all services
-sudo systemctl status dnsmasq nginx tftpd-hpa rpi-deployment rpi-web
+sudo systemctl status dnsmasq nginx rpi-deployment rpi-web
 
 # View real-time deployment logs
 tail -f /opt/rpi-deployment/logs/deployment.log
@@ -205,10 +209,10 @@ sudo journalctl -u rpi-web -f
 ### Service Management
 ```bash
 # Restart all services
-sudo systemctl restart dnsmasq nginx tftpd-hpa rpi-deployment rpi-web
+sudo systemctl restart dnsmasq nginx rpi-deployment rpi-web
 
 # Enable services on boot
-sudo systemctl enable dnsmasq nginx tftpd-hpa rpi-deployment rpi-web
+sudo systemctl enable dnsmasq nginx rpi-deployment rpi-web
 ```
 
 ### Network Diagnostics
@@ -220,7 +224,7 @@ sudo tcpdump -i eth1 port 67 or port 68
 sudo tcpdump -i eth1 port 69
 
 # Check if web interface is accessible
-curl http://192.168.101.20:5000/
+curl http://192.168.101.146:5000/
 
 # Check if deployment API is accessible
 curl http://192.168.151.1:5001/health
@@ -265,20 +269,20 @@ sudo chown root:root /opt/rpi-deployment/images/*.img
 
 ### Deployment Server Setup Status
 
-**Phase 1 & 2: COMPLETE** ✅
+**Phases 1-4: COMPLETE** ✅
 - VM provisioned at 192.168.101.146 (VMID 104, Ubuntu 24.04 LTS)
 - Dual network configured (eth0: 192.168.101.146, eth1: 192.168.151.1)
-- All base packages installed (dnsmasq, nginx, tftpd-hpa, Python, Flask)
+- All base packages installed (dnsmasq, nginx, Python, Flask)
 - Git repository: https://github.com/vorsengineer/cw-rpi-deployment
 - Custom agents configured for specialized tasks
+- **Phase 3**: DHCP/TFTP configured with dnsmasq (34/34 tests passed)
+- **Phase 4**: Boot files ready (config.txt, kernel8.img, dtb) - no iPXE needed
 
-**Current Phase: Phase 3** - DHCP and TFTP Configuration
-- See `docs/phases/Phase_3_DHCP_TFTP.md` for current work
-- Use @linux-ubuntu-specialist for dnsmasq/TFTP configuration
+**Current Phase: Phase 5** - HTTP Server Configuration
+- See `docs/phases/Phase_5_HTTP_Server.md` for current work
+- Use @nginx-config-specialist for dual-network nginx configuration
 
 **Remaining Phases:**
-- Phase 4: Boot Files Preparation
-- Phase 5: HTTP Server Configuration (nginx dual-network)
 - Phase 6: Hostname Management System
 - Phase 7: Web Management Interface
 - Phase 8-15: Python scripts, services, testing, deployment
@@ -302,7 +306,7 @@ sudo chown root:root /opt/rpi-deployment/images/*.img
 1. **Configure Venue and Hostname Pool**:
    ```bash
    # Access web interface
-   http://192.168.101.20
+   http://192.168.101.146
 
    # Or via command line
    python3 -c "
@@ -319,7 +323,7 @@ sudo chown root:root /opt/rpi-deployment/images/*.img
    ```
 
 3. **Start Monitoring**:
-   - Web Dashboard: http://192.168.101.20
+   - Web Dashboard: http://192.168.101.146
    - Command line: `tmux new-session -d -s deployment "tail -f /opt/rpi-deployment/logs/deployment.log"`
 
 4. **Connect Pis to VLAN 151** and power on in batches (5-10 at a time)
@@ -339,10 +343,12 @@ sudo chown root:root /opt/rpi-deployment/images/*.img
 ## Important Technical Details
 
 ### Network Boot Configuration
-- Raspberry Pi 5 uses UEFI ARM64 boot (option:client-arch,11)
-- Boot files served via TFTP from `/tftpboot/bootfiles/boot.ipxe`
-- iPXE script downloads kernel and initrd via HTTP
-- Installer script URL passed via kernel command line
+- Raspberry Pi 5 uses native UEFI ARM64 boot (option:client-arch,11)
+- **CRITICAL**: DHCP Option 43 must contain "Raspberry Pi Boot" string for Pi 5 bootloader
+- Boot sequence: DHCP (with Option 43) → TFTP (config.txt, kernel8.img, dtb) → Kernel → HTTP Installer
+- Boot files served via TFTP from `/tftpboot/` (using dnsmasq built-in TFTP)
+- No iPXE required - Pi 5 has network boot support in EEPROM firmware
+- Installer script URL passed via kernel command line in cmdline.txt
 
 ### Image Writing Process
 - Installer writes directly to `/dev/mmcblk0` (SD card)
@@ -394,10 +400,11 @@ Create custom role with: `VM.Allocate`, `VM.Config.*`, `VM.Console`, `VM.PowerMg
 - Check for DHCP conflicts: `sudo tcpdump -i eth1 -n port 67 or port 68`
 
 ### TFTP Boot Files Not Loading
-- Check TFTP logs: `tail -f /var/log/syslog | grep tftp`
-- Test manually: `tftp 192.168.151.1` then `get bootfiles/boot.ipxe`
-- Verify permissions: `ls -la /tftpboot/bootfiles/`
+- Check dnsmasq logs: `tail -f /var/log/dnsmasq.log | grep TFTP`
+- Test manually: `tftp 192.168.151.1` then `get config.txt` and `get kernel8.img`
+- Verify permissions: `ls -la /tftpboot/` (should be 644 for files, root:nogroup ownership)
 - Ensure TFTP is bound to deployment network (192.168.151.1)
+- Verify tftp-secure is disabled if having permission issues
 
 ### Image Download Fails
 - Check nginx logs: `tail -f /var/log/nginx/deployment-error.log`
@@ -450,7 +457,7 @@ When working with the Python scripts:
 ## Key v2.0 Features
 
 ### Dual Network Architecture
-- **Management**: 192.168.101.20 (VLAN 101) - Web UI, SSH, monitoring
+- **Management**: 192.168.101.146 (VLAN 101) - Web UI, SSH, monitoring
 - **Deployment**: 192.168.151.1 (VLAN 151) - Isolated Pi imaging network
 - Complete network isolation for security
 - UniFi DHCP must be disabled on VLAN 151
