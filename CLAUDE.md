@@ -182,35 +182,6 @@ Assistant: "I'm going to use the @linux-ubuntu-specialist agent for this Linux s
 - You can explicitly request an agent with: `@agent-name` in your prompt
 - Agents run autonomously and return comprehensive solutions
 
-## Phase 2: Seamless Server Transition
-
-**📖 See [TRANSITION_TO_SERVER.md](TRANSITION_TO_SERVER.md) for complete guide**
-
-Phase 2 sets up Claude Code directly on the deployment server for seamless workflow transition:
-
-### What Phase 2 Installs:
-1. **Node.js 20.x LTS** - Required for Claude Code
-2. **Claude Code CLI** - Full installation on the server
-3. **context7 MCP Server** - For documentation access
-4. **Complete Project Transfer** - All files to `/opt/rpi-deployment`
-5. **All Base Packages** - Everything needed for deployment
-
-### After Phase 2 Completion:
-```bash
-# SSH to server
-ssh -i ssh_keys/deployment_key captureworks@192.168.101.146
-
-# Navigate to project
-cd /opt/rpi-deployment
-
-# Start Claude Code on the server
-claude
-
-# Continue with Phase 3+ directly on the server!
-```
-
-**Note**: Git initialization is deferred - will be done later via VSCode when connecting to cw-ap01 for proper git configuration.
-
 ## Common Commands
 
 ### Check Server Status
@@ -290,57 +261,27 @@ sudo chmod 600 /opt/rpi-deployment/images/*.img
 sudo chown root:root /opt/rpi-deployment/images/*.img
 ```
 
-### Proxmox VM Provisioning
-```bash
-# Install Proxmoxer library (on workstation)
-pip3 install proxmoxer requests
-
-# Provision deployment server VM
-python3 /opt/rpi-deployment/scripts/proxmox_provision.py \
-  --host 192.168.11.194 \
-  --user root@pam \
-  --password Ati4870_x5 \
-  --config /opt/rpi-deployment/config/deployment_server_config.json
-
-# Create VM snapshot
-python3 -c "from proxmox_provision import ProxmoxProvisioner; \
-  p = ProxmoxProvisioner('192.168.11.194', 'root@pam', 'Ati4870_x5'); \
-  p.create_vm_snapshot('node', vmid, 'snapshot_name')"
-```
-
 ## Development Workflow
 
-### Setting Up a New Deployment Server
+### Deployment Server Setup Status
 
-**Phase 1: VM Provisioning (COMPLETE)**
-- VM provisioned at 192.168.101.146
-- Ubuntu 24.04 LTS installed via Cloud-Init
-- User: captureworks / Jankycorpltd01
-- SSH key authentication configured
+**Phase 1 & 2: COMPLETE** ✅
+- VM provisioned at 192.168.101.146 (VMID 104, Ubuntu 24.04 LTS)
+- Dual network configured (eth0: 192.168.101.146, eth1: 192.168.151.1)
+- All base packages installed (dnsmasq, nginx, tftpd-hpa, Python, Flask)
+- Git repository: https://github.com/vorsengineer/cw-rpi-deployment
+- Custom agents configured for specialized tasks
 
-**Phase 2: Base Configuration & Server Transition** (📖 See `docs/phases/Phase_2_Base_Configuration.md`)
+**Current Phase: Phase 3** - DHCP and TFTP Configuration
+- See `docs/phases/Phase_3_DHCP_TFTP.md` for current work
+- Use @linux-ubuntu-specialist for dnsmasq/TFTP configuration
 
-Steps on deployment server:
-1. System update
-2. Install Node.js 20.x LTS
-3. Install Claude Code globally
-4. Install context7 MCP server
-5. Transfer project files from workstation to `/opt/rpi-deployment`
-6. Configure Claude Code with authentication and MCP settings
-7. Verify network interfaces (eth0: DHCP, eth1: 192.168.151.1)
-8. Install base packages (dnsmasq, nginx, tftpd-hpa, python3, etc.)
-9. Create directory structure
-10. Validate all installations
-
-**After Phase 2**: Continue all work directly on the server using Claude Code
-
-**Phase 3+: Service Configuration** (on deployment server)
-- Configure dnsmasq for DHCP/TFTP
-- Configure nginx for dual network
-- Set up hostname management database
-- Deploy web management interface
-- Create systemd services
-- Upload master images
+**Remaining Phases:**
+- Phase 4: Boot Files Preparation
+- Phase 5: HTTP Server Configuration (nginx dual-network)
+- Phase 6: Hostname Management System
+- Phase 7: Web Management Interface
+- Phase 8-15: Python scripts, services, testing, deployment
 
 ### Updating Master Image
 
