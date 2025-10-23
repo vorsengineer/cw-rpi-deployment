@@ -1,0 +1,14 @@
+/var/log/dnsmasq.log {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    su dnsmasq adm
+    create 0640 dnsmasq adm
+    postrotate
+        # Signal dnsmasq to reopen log file
+        systemctl reload dnsmasq >/dev/null 2>&1 || true
+    endscript
+}

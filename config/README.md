@@ -131,6 +131,33 @@ curl http://192.168.101.146:5000/          # Web interface
 
 **⚠️ Important**: Both services require PYTHONPATH environment variable to access Flask packages installed in user's home directory.
 
+### Logrotate Configuration
+
+**Deployment Location**: `/etc/logrotate.d/dnsmasq`
+**Purpose**: Automatic rotation of dnsmasq logs with proper permissions
+**Modified In**: Phase 10 (Centralized Logging)
+**Key Features**:
+- Daily rotation with 14-day retention
+- Compressed old logs
+- Maintains group `adm` ownership for non-root access
+- Signals dnsmasq to reopen log file after rotation
+
+**Critical Settings**:
+- `su dnsmasq adm` - Run rotation as dnsmasq user with adm group
+- `create 0640 dnsmasq adm` - Recreate log with proper ownership
+- `postrotate` script reloads dnsmasq to use new log file
+
+**To Deploy**:
+```bash
+sudo cp config/logrotate-dnsmasq /etc/logrotate.d/dnsmasq
+sudo chmod 644 /etc/logrotate.d/dnsmasq
+
+# Test configuration
+sudo logrotate --debug /etc/logrotate.d/dnsmasq
+```
+
+**⚠️ Important**: Without this configuration, rotated logs will have group `root` instead of `adm`, preventing non-root users from reading logs.
+
 ## TFTP Boot Files
 
 ### tftp-config.txt
@@ -217,6 +244,14 @@ If the deployment server needs to be rebuilt from scratch:
    sudo cp config/rpi-web.service /etc/systemd/system/
    sudo systemctl daemon-reload
 
+   # Deploy logrotate configuration
+   sudo cp config/logrotate-dnsmasq /etc/logrotate.d/dnsmasq
+   sudo chmod 644 /etc/logrotate.d/dnsmasq
+
+   # Fix dnsmasq.log permissions for adm group access
+   sudo chgrp adm /var/log/dnsmasq.log
+   sudo chmod 640 /var/log/dnsmasq.log
+
    # Apply network tuning
    sudo sysctl -p /etc/sysctl.d/99-rpi-deployment-network.conf
 
@@ -264,9 +299,10 @@ If the deployment server needs to be rebuilt from scratch:
 | tftp-config.txt | 2025-10-23 | Phase 4 | Raspberry Pi 5 boot configuration |
 | tftp-cmdline.txt | 2025-10-23 | Phase 4 | Kernel command line with HTTP installer placeholders |
 | nginx/sites-available/rpi-deployment | 2025-10-23 | Phase 5 | Dual-network HTTP server configuration |
-| nginx/nginx.conf | 2025-10-23 | Phase 5 | Main nginx configuration (no changes from default) |
 | rpi-deployment.service | 2025-10-23 | Phase 9 | Systemd service for deployment API (port 5001) |
 | rpi-web.service | 2025-10-23 | Phase 9 | Systemd service for web interface (port 5000) |
+| logrotate-dnsmasq | 2025-10-23 | Phase 10 | Log rotation with adm group permissions |
+| nginx/nginx.conf | 2025-10-23 | Phase 5 | Main nginx configuration (no changes from default) |
 
 ## Important Notes
 
