@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This repository contains implementation plans and automation scripts for a **Raspberry Pi 5 Network Deployment System v2.0**. The system enables mass deployment of KartXPro (KXP2) and RaceXPro (RXP2) dual-camera recorder systems to blank Raspberry Pi 5 devices over the network using PXE/network boot technology with advanced hostname management.
 
+**GitHub Repository**: https://github.com/vorsengineer/cw-rpi-deployment
+
 **Target Environment:**
 - Management Network: 192.168.101.x subnet (VLAN 101)
 - Deployment Network: 192.168.151.0/24 subnet (VLAN 151)
@@ -17,7 +19,8 @@ This repository contains implementation plans and automation scripts for a **Ras
 
 **Current Status**:
 - **Phase 1**: ✅ COMPLETE (VM provisioned at 192.168.101.146)
-- **Phase 2**: ⏳ Ready to Start (Base Configuration & Server Transition)
+- **Phase 2**: ✅ COMPLETE (Server configured, Git initialized)
+- **Phase 3**: ⏳ Ready to Start (DHCP and TFTP Configuration)
 - See `@CURRENT_PHASE.md` for quick reference
 
 **Documentation Structure**:
