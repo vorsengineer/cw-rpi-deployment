@@ -1,11 +1,11 @@
-# Current Phase: Phase 8 - Enhanced Python Deployment Scripts
+# Current Phase: Phase 9 - Service Management
 
 **Status**: ⏳ Ready to Start
 **VM IP**: 192.168.101.146
 
 ## Quick Access
 
-📖 **Full Phase Documentation**: [docs/phases/Phase_8_Python_Scripts.md](docs/phases/Phase_8_Python_Scripts.md)
+📖 **Full Phase Documentation**: [docs/phases/Phase_9_Service_Management.md](docs/phases/Phase_9_Service_Management.md)
 
 ## Quick Start
 
@@ -25,48 +25,48 @@ cd /opt/rpi-deployment
 claude
 ```
 
-## Phase 8 Tasks
+## Phase 9 Tasks
 
-- [ ] Implement deployment_server.py (Flask API on port 5001)
-- [ ] Create pi_installer.py (runs on Raspberry Pi during network boot)
-- [ ] Implement API endpoints (/api/config, /api/status, /images/<filename>, /health)
-- [ ] Test API endpoints functionality
-- [ ] Verify hostname integration with HostnameManager
-- [ ] Test end-to-end deployment workflow (simulation)
-- [ ] Create comprehensive unit tests for both scripts
-- [ ] Document API specifications
-- [ ] Create user documentation for deployment scripts
+- [ ] Create systemd service file for deployment server (rpi-deployment.service)
+- [ ] Create systemd service file for web interface (rpi-web.service)
+- [ ] Configure service dependencies and restart policies
+- [ ] Enable services for auto-start on boot
+- [ ] Start both services
+- [ ] Verify services are running correctly
+- [ ] Test auto-restart on failure
+- [ ] Test boot persistence (reboot server)
+- [ ] Configure service logging
+- [ ] Create service management documentation
 
 ## Important Notes
 
-⚠️ **Prerequisites**: Phase 7 must be complete (Web Management Interface operational) ✅
+⚠️ **Prerequisites**: Phase 8 must be complete (Python deployment scripts operational) ✅
 
-**Deployment Server Requirements**:
-- Flask API on port 5001 (deployment network 192.168.151.1)
-- Integration with HostnameManager for hostname assignment
-- Product-specific image selection (KXP2/RXP2)
-- Deployment history tracking in SQLite database
-- Real-time status reporting
-- Error handling and logging
+**Service Requirements**:
+- rpi-deployment.service: Runs deployment_server.py on port 5001 (deployment network)
+- rpi-web.service: Runs web/app.py on port 5000 (management network)
+- Both run as 'captureworks' user (not root)
+- Auto-restart on failure (10-second delay)
+- Start after network is available
+- Dependency: rpi-web requires rpi-deployment
 
-**Pi Installer Requirements**:
-- Runs on Raspberry Pi during network boot
-- Verify SD card is present and writable
-- Request hostname assignment from server
-- Download appropriate master image (KXP2 or RXP2)
-- Write image to SD card with progress reporting
-- Configure assigned hostname
-- Report status back to server
-- Reboot into newly installed system
+**Service Management Commands**:
+```bash
+# Check status
+sudo systemctl status rpi-deployment rpi-web
 
-**Key Objectives**:
-- Complete deployment automation (server-side)
-- Pi installer script ready for network boot
-- Full integration with hostname management
-- Comprehensive error handling
-- Production-ready logging
+# Start/stop services
+sudo systemctl start rpi-deployment
+sudo systemctl start rpi-web
 
-**Recommended Agent**: Use @python-tdd-architect for deployment script development
+# Enable/disable auto-start
+sudo systemctl enable rpi-deployment
+sudo systemctl enable rpi-web
+
+# View logs
+sudo journalctl -u rpi-deployment -f
+sudo journalctl -u rpi-web -f
+```
 
 ## Navigation
 
@@ -77,5 +77,5 @@ claude
 ---
 
 **Last Updated**: 2025-10-23
-**Previous Phase**: [Phase 7 - Web Management Interface](docs/phases/Phase_7_Web_Interface.md) ✅ COMPLETE
-**Next Phase**: [Phase 9 - Service Management](docs/phases/Phase_9_Service_Management.md)
+**Previous Phase**: [Phase 8 - Enhanced Python Deployment Scripts](docs/phases/Phase_8_Python_Scripts.md) ✅ COMPLETE
+**Next Phase**: [Phase 10 - Testing and Validation](docs/phases/Phase_10_Testing_Validation.md)
