@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Create' if action == 'create' else 'Edit' }} Venue - RPi5 Deployment Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ 'Create New Venue' if action == 'create' else 'Edit Venue: ' + venue_code }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('venues_list') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Venues
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    {% if action == 'create' %}
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Venue Code *</label>
+                        <input type="text" class="form-control {% if form.code.errors %}is-invalid{% endif %}"
+                               id="code" name="code" value="{{ form.code.data or '' }}"
+                               placeholder="4-letter code (e.g., CORO)" maxlength="4" required>
+                        <div class="form-text">Must be exactly 4 uppercase letters</div>
+                        {% if form.code.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.code.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Venue Name *</label>
+                        <input type="text" class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+                               id="name" name="name" value="{{ form.name.data or '' }}"
+                               placeholder="e.g., Corona Karting" required>
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control {% if form.location.errors %}is-invalid{% endif %}"
+                               id="location" name="location" value="{{ form.location.data or '' }}"
+                               placeholder="e.g., California">
+                        {% if form.location.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.location.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="contact_email" class="form-label">Contact Email</label>
+                        <input type="email" class="form-control {% if form.contact_email.errors %}is-invalid{% endif %}"
+                               id="contact_email" name="contact_email" value="{{ form.contact_email.data or '' }}"
+                               placeholder="contact@venue.com">
+                        {% if form.contact_email.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.contact_email.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> {{ 'Create Venue' if action == 'create' else 'Save Changes' }}
+                        </button>
+                        <a href="{{ url_for('venues_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <p class="small"><strong>Venue Code:</strong></p>
+                <ul class="small">
+                    <li>Must be exactly 4 letters</li>
+                    <li>Uppercase only</li>
+                    <li>Cannot be changed after creation</li>
+                    <li>Used in hostname format: KXP2-CODE-###</li>
+                </ul>
+
+                <p class="small mt-3"><strong>Venue Name:</strong></p>
+                <ul class="small">
+                    <li>Full name of the venue</li>
+                    <li>Used for display purposes</li>
+                </ul>
+
+                <p class="small mt-3"><strong>Optional Fields:</strong></p>
+                <ul class="small">
+                    <li>Location and contact email are optional</li>
+                    <li>Helpful for organization and reference</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - RPi5 Deployment Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshStats()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Venues
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.total_venues }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-building fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Available Hostnames
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.available_hostnames }} / {{ stats.total_hostnames }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-hdd-network fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Assigned Devices
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.assigned_hostnames }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Recent Deployments (24h)
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.successful_deployments }} / {{ stats.recent_deployments }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-arrow-repeat fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Batch Section -->
+{% if active_batch %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow border-success">
+            <div class="card-header bg-success text-white py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="bi bi-play-circle-fill"></i> Active Deployment Batch
+                </h6>
+                <a href="{{ url_for('batches_list') }}" class="btn btn-sm btn-light">View All Batches</a>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h5 class="mb-1">Batch #{{ active_batch.id }}</h5>
+                        <p class="mb-0">
+                            <span class="badge bg-secondary">{{ active_batch.venue_code }}</span>
+                            {% if active_batch.product_type == 'KXP2' %}
+                                <span class="badge bg-primary">KXP2</span>
+                            {% else %}
+                                <span class="badge bg-info">RXP2</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        {% set progress_percent = ((active_batch.total_count - active_batch.remaining_count) / active_batch.total_count * 100) | int %}
+                        <div style="position: relative;">
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                                     role="progressbar"
+                                     style="width: {{ progress_percent }}%"
+                                     aria-valuenow="{{ progress_percent }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div style="position: absolute; width: 100%; text-align: center; top: 5px; font-weight: 600; color: #495057;">
+                                {{ active_batch.remaining_count }} / {{ active_batch.total_count }} remaining ({{ progress_percent }}%)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <a href="{{ url_for('batch_detail', batch_id=active_batch.id) }}" class="btn btn-primary">
+                            <i class="bi bi-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Deployments -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Deployments</h6>
+                <a href="{{ url_for('deployments_list') }}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_deployments %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Hostname</th>
+                                    <th>Product</th>
+                                    <th>Venue</th>
+                                    <th>Status</th>
+                                    <th>Started</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for deployment in recent_deployments %}
+                                <tr>
+                                    <td>{{ deployment.hostname }}</td>
+                                    <td><span class="badge bg-secondary">{{ deployment.product_type }}</span></td>
+                                    <td>{{ deployment.venue_code }}</td>
+                                    <td>
+                                        <span class="status-{{ deployment.status }}">
+                                            <i class="bi bi-{% if deployment.status == 'completed' %}check-circle{% elif deployment.status == 'failed' %}x-circle{% else %}clock{% endif %}"></i>
+                                            {{ deployment.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ deployment.started_at[:19] if deployment.started_at else 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent deployments</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+            </div>
+            <div class="card-body">
+                <h6 class="small font-weight-bold">Services</h6>
+                {% for service, status in system_status.services.items() %}
+                    <div class="mb-2">
+                        <span class="font-weight-bold">{{ service }}</span>
+                        <span class="float-end">
+                            {% if status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif status == 'inactive' %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Unknown</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                {% endfor %}
+
+                <hr>
+
+                <h6 class="small font-weight-bold mt-3">Network</h6>
+                <p class="small">
+                    {% if system_status.network.interfaces == 'ok' %}
+                        <span class="badge bg-success">OK</span>
+                    {% else %}
+                        <span class="badge bg-danger">Error</span>
+                    {% endif %}
+                </p>
+
+                <h6 class="small font-weight-bold mt-3">Disk Space</h6>
+                <p class="small">
+                    {% if system_status.disk.status == 'ok' %}
+                        <span class="badge bg-success">OK</span>
+                    {% else %}
+                        <span class="badge bg-danger">Error</span>
+                    {% endif %}
+                </p>
+
+                <a href="{{ url_for('system_status') }}" class="btn btn-sm btn-outline-primary w-100 mt-3">
+                    View Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshStats() {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            location.reload();
+        })
+        .catch(error => console.error('Error refreshing stats:', error));
+}
+</script>
+{% endblock %}

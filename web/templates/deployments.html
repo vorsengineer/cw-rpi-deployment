@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Deployments - RPi5 Deployment Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Deployment History</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-3">
+    <div class="col-md-3">
+        <form method="GET" action="{{ url_for('deployments_list') }}" id="filterForm">
+            <label class="form-label">Venue</label>
+            <select name="venue" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit()">
+                <option value="">All Venues</option>
+                {% for venue in venues %}
+                    <option value="{{ venue.code }}" {% if venue.code == venue_filter %}selected{% endif %}>
+                        {{ venue.code }} - {{ venue.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <div class="col-md-3">
+        <form method="GET" action="{{ url_for('deployments_list') }}" id="productFilterForm">
+            <label class="form-label">Product</label>
+            <select name="product" class="form-select form-select-sm" onchange="document.getElementById('productFilterForm').submit()">
+                <option value="">All Products</option>
+                <option value="KXP2" {% if product_filter == 'KXP2' %}selected{% endif %}>KXP2</option>
+                <option value="RXP2" {% if product_filter == 'RXP2' %}selected{% endif %}>RXP2</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="col-md-3">
+        <form method="GET" action="{{ url_for('deployments_list') }}" id="statusFilterForm">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select form-select-sm" onchange="document.getElementById('statusFilterForm').submit()">
+                <option value="">All Statuses</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
+                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="col-md-3 d-flex align-items-end">
+        <a href="{{ url_for('deployments_list') }}" class="btn btn-sm btn-outline-secondary w-100">
+            <i class="bi bi-x-circle"></i> Clear Filters
+        </a>
+    </div>
+</div>
+
+{% if deployments %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>Hostname</th>
+                    <th>Product</th>
+                    <th>Venue</th>
+                    <th>MAC Address</th>
+                    <th>IP Address</th>
+                    <th>Status</th>
+                    <th>Started</th>
+                    <th>Completed</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for deployment in deployments %}
+                <tr>
+                    <td><strong>{{ deployment.hostname }}</strong></td>
+                    <td><span class="badge bg-secondary">{{ deployment.product_type }}</span></td>
+                    <td>{{ deployment.venue_code }}</td>
+                    <td><small>{{ deployment.mac_address }}</small></td>
+                    <td>{{ deployment.ip_address or 'N/A' }}</td>
+                    <td>
+                        <span class="status-{{ deployment.status }}">
+                            <i class="bi bi-{% if deployment.status == 'completed' %}check-circle{% elif deployment.status == 'failed' %}x-circle{% else %}clock{% endif %}"></i>
+                            {{ deployment.status }}
+                        </span>
+                    </td>
+                    <td><small>{{ deployment.started_at[:19] if deployment.started_at else 'N/A' }}</small></td>
+                    <td><small>{{ deployment.completed_at[:19] if deployment.completed_at else '-' }}</small></td>
+                    <td>
+                        {% if deployment.started_at and deployment.completed_at %}
+                            <small>
+                                {% set duration = ((deployment.completed_at | replace('T', ' ') | replace('Z', '')) | parse_datetime - (deployment.started_at | replace('T', ' ') | replace('Z', '')) | parse_datetime).total_seconds() %}
+                                {% if duration >= 0 %}
+                                    {{ '%.1f' | format(duration / 60) }} min
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </small>
+                        {% else %}
+                            <small>-</small>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if deployment.error_message %}
+                <tr class="table-danger">
+                    <td colspan="9">
+                        <small><strong>Error:</strong> {{ deployment.error_message }}</small>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p class="text-muted small">Showing {{ deployments|length }} deployments</p>
+
+    <!-- Pagination -->
+    <nav aria-label="Deployment pagination">
+        <ul class="pagination">
+            {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('deployments_list', page=page-1, venue=venue_filter, product=product_filter, status=status_filter) }}">Previous</a>
+                </li>
+            {% endif %}
+            <li class="page-item active">
+                <span class="page-link">Page {{ page }}</span>
+            </li>
+            {% if deployments|length >= 20 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('deployments_list', page=page+1, venue=venue_filter, product=product_filter, status=status_filter) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No deployments found matching the selected filters.
+    </div>
+{% endif %}
+{% endblock %}

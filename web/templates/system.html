@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}System Status - RPi5 Deployment Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">System Status</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Services Status -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Services</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service, service_status in status.services.items() %}
+                            <tr>
+                                <td><strong>{{ service }}</strong></td>
+                                <td>
+                                    {% if service_status == 'active' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    {% elif service_status == 'inactive' %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle"></i> Inactive
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-question-circle"></i> Unknown
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-hdd"></i> Disk Space</h5>
+            </div>
+            <div class="card-body">
+                {% if status.disk.status == 'ok' %}
+                    <pre class="small mb-0">{{ status.disk.output }}</pre>
+                {% else %}
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Unable to retrieve disk space information
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Network Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-ethernet"></i> Network Interfaces</h5>
+            </div>
+            <div class="card-body">
+                {% if status.network.interfaces == 'ok' %}
+                    <pre class="small mb-0" style="max-height: 400px; overflow-y: auto;">{{ status.network.output }}</pre>
+                {% else %}
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Unable to retrieve network information
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> System Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Management IP:</dt>
+                    <dd class="col-sm-6">192.168.101.146:5000</dd>
+
+                    <dt class="col-sm-6">Deployment IP:</dt>
+                    <dd class="col-sm-6">192.168.151.1:5001</dd>
+
+                    <dt class="col-sm-6">Database:</dt>
+                    <dd class="col-sm-6">/opt/rpi-deployment/database/deployment.db</dd>
+
+                    <dt class="col-sm-6">Last Updated:</dt>
+                    <dd class="col-sm-6">{{ status.timestamp[:19] if status.timestamp else 'N/A' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Log Files</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">Log files are located at:</p>
+                <ul class="small">
+                    <li><code>/opt/rpi-deployment/logs/deployment.log</code></li>
+                    <li><code>/var/log/nginx/deployment-access.log</code></li>
+                    <li><code>/var/log/nginx/deployment-error.log</code></li>
+                    <li><code>/var/log/dnsmasq.log</code></li>
+                </ul>
+                <p class="small mt-2">
+                    <strong>View logs:</strong><br>
+                    <code>sudo tail -f /opt/rpi-deployment/logs/deployment.log</code>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

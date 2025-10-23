@@ -7,6 +7,7 @@ Creates SQLite database with schema for:
 - venues: Venue/location information
 - deployment_history: Record of all deployments
 - master_images: Available OS images for deployment
+- deployment_batches: Batch deployment management with priority queue
 
 Schema enforces data integrity through:
 - CHECK constraints on product types and status values
@@ -126,6 +127,24 @@ def initialize_database(db_path: str = "/opt/rpi-deployment/database/deployment.
         """)
         logger.info("Created master_images table")
 
+        # Create deployment_batches table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS deployment_batches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                venue_code TEXT NOT NULL,
+                product_type TEXT NOT NULL CHECK(product_type IN ('KXP2', 'RXP2')),
+                total_count INTEGER NOT NULL,
+                remaining_count INTEGER NOT NULL,
+                priority INTEGER DEFAULT 0,
+                status TEXT NOT NULL CHECK(status IN ('pending', 'active', 'paused', 'completed', 'cancelled')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                started_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                FOREIGN KEY (venue_code) REFERENCES venues(code)
+            )
+        """)
+        logger.info("Created deployment_batches table")
+
         # Create indexes for performance
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_hostname_status
@@ -140,6 +159,16 @@ def initialize_database(db_path: str = "/opt/rpi-deployment/database/deployment.
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_deployment_date
             ON deployment_history(started_at)
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_batch_status
+            ON deployment_batches(status, priority)
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_batch_venue
+            ON deployment_batches(venue_code)
         """)
         logger.info("Created indexes")
 
@@ -177,6 +206,7 @@ def reset_database(db_path: str = "/opt/rpi-deployment/database/deployment.db") 
             cursor = conn.cursor()
 
             # Drop all tables
+            cursor.execute("DROP TABLE IF EXISTS deployment_batches")
             cursor.execute("DROP TABLE IF EXISTS hostname_pool")
             cursor.execute("DROP TABLE IF EXISTS venues")
             cursor.execute("DROP TABLE IF EXISTS deployment_history")
@@ -209,7 +239,7 @@ def verify_schema(db_path: str = "/opt/rpi-deployment/database/deployment.db") -
         cursor = conn.cursor()
 
         # Check all required tables exist
-        required_tables = ['hostname_pool', 'venues', 'deployment_history', 'master_images']
+        required_tables = ['hostname_pool', 'venues', 'deployment_history', 'master_images', 'deployment_batches']
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         existing_tables = [row[0] for row in cursor.fetchall()]
 
@@ -219,7 +249,7 @@ def verify_schema(db_path: str = "/opt/rpi-deployment/database/deployment.db") -
                 return False
 
         # Check indexes exist
-        required_indexes = ['idx_hostname_status', 'idx_hostname_venue', 'idx_deployment_date']
+        required_indexes = ['idx_hostname_status', 'idx_hostname_venue', 'idx_deployment_date', 'idx_batch_status', 'idx_batch_venue']
         cursor.execute("SELECT name FROM sqlite_master WHERE type='index'")
         existing_indexes = [row[0] for row in cursor.fetchall()]
 

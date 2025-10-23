@@ -20,6 +20,22 @@ __pycache__/
 dist/
 build/
 
+# Virtual Environments (NEVER commit these!)
+venv/
+env/
+.venv/
+ENV/
+
+# Testing & Coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.pytest_cache/
+.tox/
+.nox/
+.hypothesis/
+
 # Environment Variables
 .env
 .env.local
@@ -42,6 +58,15 @@ Thumbs.db
 images/*.img
 database/*.db
 logs/*.log
+
+# SQLite temporary files
+*.db-journal
+*.db-wal
+*.db-shm
+
+# User-uploaded files
+web/static/uploads/*
+!web/static/uploads/.gitkeep
 
 # But keep directory structure
 !images/.gitkeep

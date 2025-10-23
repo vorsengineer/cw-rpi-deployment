@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Deployment Batches - RPi5 Deployment Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.css">
+<style>
+    .batch-row {
+        cursor: move;
+    }
+    .batch-row.sortable-ghost {
+        opacity: 0.4;
+    }
+    .batch-row.sortable-drag {
+        background-color: #f8f9fa;
+    }
+    .drag-handle {
+        cursor: grab;
+        color: #6c757d;
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    .progress-text {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #495057;
+    }
+    .priority-edit {
+        width: 60px;
+        display: inline-block;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+    .filter-section {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1.5rem;
+    }
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .mobile-card {
+            display: block;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+        .desktop-table {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-collection"></i> Deployment Batches
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('batch_create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create New Batch
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-section">
+    <form method="GET" action="{{ url_for('batches_list') }}" id="filter-form">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="venue-filter" class="form-label">Venue</label>
+                <select name="venue" id="venue-filter" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Venues</option>
+                    {% for venue in venues %}
+                        <option value="{{ venue.code }}" {% if venue.code == venue_filter %}selected{% endif %}>
+                            {{ venue.code }} - {{ venue.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="status-filter" class="form-label">Status</label>
+                <select name="status" id="status-filter" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="paused" {% if status_filter == 'paused' %}selected{% endif %}>Paused</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                    <i class="bi bi-x-circle"></i> Clear Filters
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if batches %}
+    <!-- Desktop Table View -->
+    <div class="table-responsive desktop-table">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th width="40"></th>
+                    <th>ID</th>
+                    <th>Venue</th>
+                    <th>Product</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Priority</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="batches-table">
+                {% for batch in batches %}
+                <tr class="batch-row" data-batch-id="{{ batch.id }}">
+                    <td class="drag-handle" title="Drag to reorder">
+                        <i class="bi bi-grip-vertical"></i>
+                    </td>
+                    <td><strong>#{{ batch.id }}</strong></td>
+                    <td>
+                        <strong>{{ batch.venue_code }}</strong>
+                    </td>
+                    <td>
+                        {% if batch.product_type == 'KXP2' %}
+                            <span class="badge bg-primary">KXP2</span>
+                        {% else %}
+                            <span class="badge bg-info">RXP2</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if batch.status == 'pending' %}
+                            <span class="badge bg-secondary">Pending</span>
+                        {% elif batch.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif batch.status == 'paused' %}
+                            <span class="badge bg-warning text-dark">Paused</span>
+                        {% elif batch.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% elif batch.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="position: relative; min-width: 150px;">
+                            {% set progress_percent = ((batch.total_count - batch.remaining_count) / batch.total_count * 100) | int %}
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-success"
+                                     role="progressbar"
+                                     style="width: {{ progress_percent }}%"
+                                     aria-valuenow="{{ progress_percent }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div class="progress-text">
+                                {{ batch.remaining_count }} / {{ batch.total_count }} remaining
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm priority-edit">
+                            <input type="number"
+                                   class="form-control priority-input"
+                                   value="{{ batch.priority }}"
+                                   data-batch-id="{{ batch.id }}"
+                                   data-original="{{ batch.priority }}"
+                                   onchange="updatePriority({{ batch.id }}, this.value)">
+                        </div>
+                    </td>
+                    <td>
+                        <small>{{ batch.created_at[:10] if batch.created_at else 'N/A' }}</small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            {% if batch.status == 'pending' or batch.status == 'paused' %}
+                                <button type="button"
+                                        class="btn btn-success"
+                                        onclick="startBatch({{ batch.id }})"
+                                        title="Start batch">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
+                            {% endif %}
+                            {% if batch.status == 'active' %}
+                                <button type="button"
+                                        class="btn btn-warning"
+                                        onclick="pauseBatch({{ batch.id }})"
+                                        title="Pause batch">
+                                    <i class="bi bi-pause-fill"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="d-md-none mobile-cards">
+        {% for batch in batches %}
+        <div class="mobile-card" data-batch-id="{{ batch.id }}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h5 class="mb-1">
+                        <i class="bi bi-grip-vertical text-muted"></i>
+                        Batch #{{ batch.id }}
+                    </h5>
+                    <span class="badge bg-secondary">{{ batch.venue_code }}</span>
+                    {% if batch.product_type == 'KXP2' %}
+                        <span class="badge bg-primary">KXP2</span>
+                    {% else %}
+                        <span class="badge bg-info">RXP2</span>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if batch.status == 'pending' %}
+                        <span class="badge bg-secondary">Pending</span>
+                    {% elif batch.status == 'active' %}
+                        <span class="badge bg-success">Active</span>
+                    {% elif batch.status == 'paused' %}
+                        <span class="badge bg-warning text-dark">Paused</span>
+                    {% elif batch.status == 'completed' %}
+                        <span class="badge bg-primary">Completed</span>
+                    {% elif batch.status == 'cancelled' %}
+                        <span class="badge bg-danger">Cancelled</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {% set progress_percent = ((batch.total_count - batch.remaining_count) / batch.total_count * 100) | int %}
+                <div style="position: relative;">
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-success"
+                             role="progressbar"
+                             style="width: {{ progress_percent }}%"
+                             aria-valuenow="{{ progress_percent }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <div class="progress-text">
+                        {{ batch.remaining_count }} / {{ batch.total_count }} remaining
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    Priority: {{ batch.priority }} | Created: {{ batch.created_at[:10] if batch.created_at else 'N/A' }}
+                </small>
+                <div class="btn-group btn-group-sm">
+                    {% if batch.status == 'pending' or batch.status == 'paused' %}
+                        <button type="button" class="btn btn-success" onclick="startBatch({{ batch.id }})">
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+                    {% endif %}
+                    {% if batch.status == 'active' %}
+                        <button type="button" class="btn btn-warning" onclick="pauseBatch({{ batch.id }})">
+                            <i class="bi bi-pause-fill"></i>
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <p class="text-muted small mt-3">
+        <i class="bi bi-info-circle"></i>
+        Showing {{ batches|length }} batch(es). Drag rows to reorder by priority.
+    </p>
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-collection"></i>
+        <h3>No Deployment Batches</h3>
+        <p class="text-muted">
+            {% if venue_filter or status_filter %}
+                No batches match your current filters. <a href="{{ url_for('batches_list') }}">Clear filters</a> to see all batches.
+            {% else %}
+                Get started by creating your first deployment batch to manage multiple device deployments efficiently.
+            {% endif %}
+        </p>
+        {% if not venue_filter and not status_filter %}
+            <a href="{{ url_for('batch_create') }}" class="btn btn-primary btn-lg mt-3">
+                <i class="bi bi-plus-circle"></i> Create First Batch
+            </a>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/batches.js') }}"></script>
+{% endblock %}

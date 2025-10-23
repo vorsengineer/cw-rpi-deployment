@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Import Kart Numbers - RPi5 Deployment Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Bulk Import Kart Numbers</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('kart_numbers_list') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Kart Numbers
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- RXP2 Workflow Alert -->
+        <div id="rxp2-alert" class="alert alert-info alert-dismissible fade show d-none" role="alert">
+            <h6 class="alert-heading"><i class="bi bi-info-circle"></i> RXP2 Deployment</h6>
+            <p class="mb-2 small">
+                <strong>RXP2 devices don't require bulk import!</strong> They use device serial numbers for identification.
+            </p>
+            <p class="mb-2 small">
+                To deploy RXP2 devices, simply create a deployment batch specifying the quantity you need.
+            </p>
+            <a href="{{ url_for('batch_create') }}" class="btn btn-sm btn-success">
+                <i class="bi bi-plus-circle"></i> Create RXP2 Deployment Batch
+            </a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="venue_code" class="form-label">Select Venue *</label>
+                        <select class="form-select {% if form.venue_code.errors %}is-invalid{% endif %}"
+                                id="venue_code" name="venue_code" required>
+                            {% for value, label in form.venue_code.choices %}
+                                <option value="{{ value }}" {% if value == form.venue_code.data %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.venue_code.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.venue_code.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Product Type *</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="product_type" id="product_kxp2" value="KXP2" checked>
+                                <label class="form-check-label" for="product_kxp2">
+                                    KXP2 (KartXPro) - Pool-based
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="product_type" id="product_rxp2" value="RXP2">
+                                <label class="form-check-label" for="product_rxp2">
+                                    RXP2 (RaceXPro) - Serial-based
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            <strong>KXP2:</strong> Import specific kart numbers to add to the pool.
+                            <strong>RXP2:</strong> Serial numbers assigned automatically during deployment (bulk import optional).
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="kart_numbers" class="form-label">Kart Numbers *</label>
+                        <textarea class="form-control {% if form.kart_numbers.errors %}is-invalid{% endif %}"
+                                  id="kart_numbers" name="kart_numbers" rows="10" required
+                                  placeholder="Enter kart numbers, one per line or comma-separated:&#10;001&#10;002&#10;003&#10;or: 001, 002, 003">{{ form.kart_numbers.data or '' }}</textarea>
+                        <div class="form-text">{{ form.kart_numbers.description }}</div>
+                        {% if form.kart_numbers.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.kart_numbers.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Import Kart Numbers
+                        </button>
+                        <a href="{{ url_for('kart_numbers_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Import Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <p class="small"><strong>Format:</strong></p>
+                <ul class="small">
+                    <li>One kart number per line, OR</li>
+                    <li>Comma-separated list</li>
+                    <li>Numbers will be zero-padded to 3 digits</li>
+                </ul>
+
+                <p class="small mt-3"><strong>Examples:</strong></p>
+                <pre class="small bg-light p-2">001
+002
+003</pre>
+                <p class="small text-center">or</p>
+                <pre class="small bg-light p-2">1, 2, 3, 10, 25</pre>
+
+                <p class="small mt-3"><strong>Duplicates:</strong></p>
+                <ul class="small">
+                    <li>Duplicate kart numbers are automatically skipped</li>
+                    <li>System will report how many were imported</li>
+                </ul>
+
+                <p class="small mt-3"><strong>Hostname Format:</strong></p>
+                <ul class="small">
+                    <li><strong>KXP2:</strong> KXP2-[VENUE]-[NUMBER]<br/>Example: KXP2-CORO-001</li>
+                    <li><strong>RXP2:</strong> RXP2-[VENUE]-[SERIAL]<br/>Example: RXP2-CORO-ABC12345<br/>(Serial assigned during deployment)</li>
+                </ul>
+
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="small mb-2"><i class="bi bi-lightbulb"></i> Workflow Guide</h6>
+                    <p class="small mb-1"><strong>For KXP2 deployments:</strong></p>
+                    <ol class="small mb-2">
+                        <li>Import kart numbers here</li>
+                        <li>Create deployment batch</li>
+                        <li>Start batch and deploy devices</li>
+                    </ol>
+                    <p class="small mb-1"><strong>For RXP2 deployments:</strong></p>
+                    <ol class="small mb-2">
+                        <li>Skip bulk import</li>
+                        <li>Create batch with quantity</li>
+                        <li>Start batch and deploy devices</li>
+                    </ol>
+                    <a href="{{ url_for('batches_list') }}" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                        <i class="bi bi-collection"></i> Manage Deployment Batches
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show RXP2 alert when RXP2 is selected
+document.addEventListener('DOMContentLoaded', function() {
+    const kxp2Radio = document.getElementById('product_kxp2');
+    const rxp2Radio = document.getElementById('product_rxp2');
+    const rxp2Alert = document.getElementById('rxp2-alert');
+    const kartNumbersField = document.getElementById('kart_numbers');
+
+    function updateWorkflowVisibility() {
+        if (rxp2Radio.checked) {
+            rxp2Alert.classList.remove('d-none');
+            kartNumbersField.required = false;
+            kartNumbersField.placeholder = "Optional for RXP2: Enter serial numbers if pre-importing (not typically needed)";
+        } else {
+            rxp2Alert.classList.add('d-none');
+            kartNumbersField.required = true;
+            kartNumbersField.placeholder = "Enter kart numbers, one per line or comma-separated:\n001\n002\n003\nor: 001, 002, 003";
+        }
+    }
+
+    kxp2Radio.addEventListener('change', updateWorkflowVisibility);
+    rxp2Radio.addEventListener('change', updateWorkflowVisibility);
+
+    // Check on page load
+    updateWorkflowVisibility();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ venue.code }} - RPi5 Deployment Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ venue.code }} - {{ venue.name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('venue_edit', code=venue.code) }}" class="btn btn-sm btn-warning me-2">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="{{ url_for('venues_list') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Venues
+        </a>
+    </div>
+</div>
+
+<!-- Venue Information -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Venue Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Code:</dt>
+                    <dd class="col-sm-8"><strong>{{ venue.code }}</strong></dd>
+
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8">{{ venue.name }}</dd>
+
+                    <dt class="col-sm-4">Location:</dt>
+                    <dd class="col-sm-8">{{ venue.location or 'Not specified' }}</dd>
+
+                    <dt class="col-sm-4">Contact Email:</dt>
+                    <dd class="col-sm-8">{{ venue.contact_email or 'Not specified' }}</dd>
+
+                    <dt class="col-sm-4">Created:</dt>
+                    <dd class="col-sm-8">{{ venue.created_at[:19] if venue.created_at else 'N/A' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Statistics</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">Total Hostnames:</dt>
+                    <dd class="col-sm-6"><strong>{{ stats.total_hostnames }}</strong></dd>
+
+                    <dt class="col-sm-6">Available:</dt>
+                    <dd class="col-sm-6"><span class="badge badge-available">{{ stats.available_hostnames }}</span></dd>
+
+                    <dt class="col-sm-6">Assigned:</dt>
+                    <dd class="col-sm-6"><span class="badge badge-assigned">{{ stats.assigned_hostnames }}</span></dd>
+
+                    <dt class="col-sm-6">Retired:</dt>
+                    <dd class="col-sm-6"><span class="badge badge-retired">{{ stats.retired_hostnames }}</span></dd>
+                </dl>
+
+                <a href="{{ url_for('kart_numbers_list', venue=venue.code) }}" class="btn btn-sm btn-primary w-100 mt-2">
+                    <i class="bi bi-list"></i> View Kart Numbers
+                </a>
+                <a href="{{ url_for('kart_numbers_bulk_import') }}" class="btn btn-sm btn-success w-100 mt-2">
+                    <i class="bi bi-upload"></i> Import Kart Numbers
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Deployments for this Venue -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Recent Deployments</h5>
+    </div>
+    <div class="card-body">
+        <a href="{{ url_for('deployments_list', venue=venue.code) }}" class="btn btn-sm btn-primary">
+            View All Deployments for {{ venue.code }}
+        </a>
+    </div>
+</div>
+{% endblock %}

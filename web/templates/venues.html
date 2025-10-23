@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Venues - RPi5 Deployment Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Venues</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('venue_create') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> Create New Venue
+        </a>
+    </div>
+</div>
+
+{% if venues %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Contact Email</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venue in venues %}
+                <tr>
+                    <td><strong>{{ venue.code }}</strong></td>
+                    <td>{{ venue.name }}</td>
+                    <td>{{ venue.location or 'N/A' }}</td>
+                    <td>{{ venue.contact_email or 'N/A' }}</td>
+                    <td>{{ venue.created_at[:10] if venue.created_at else 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('venue_detail', code=venue.code) }}" class="btn btn-sm btn-info">View</a>
+                        <a href="{{ url_for('venue_edit', code=venue.code) }}" class="btn btn-sm btn-warning">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No venues found. <a href="{{ url_for('venue_create') }}">Create your first venue</a>.
+    </div>
+{% endif %}
+{% endblock %}

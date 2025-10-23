@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Create Deployment Batch - RPi5 Deployment Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-panel {
+        background: #f8f9fa;
+        border-left: 4px solid #0d6efd;
+        padding: 1.5rem;
+        border-radius: 0.375rem;
+    }
+    .help-panel h5 {
+        color: #0d6efd;
+        margin-bottom: 1rem;
+    }
+    .help-panel .section {
+        margin-bottom: 1.5rem;
+    }
+    .help-panel .section:last-child {
+        margin-bottom: 0;
+    }
+    .form-section {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .product-option {
+        border: 2px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .product-option:hover {
+        border-color: #0d6efd;
+        background: #f8f9fa;
+    }
+    .product-option input[type="radio"]:checked ~ * {
+        font-weight: 600;
+    }
+    .product-option input[type="radio"]:checked ~ .product-badge {
+        transform: scale(1.1);
+    }
+    .availability-warning {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        border-radius: 0.25rem;
+    }
+    .availability-success {
+        background: #d1e7dd;
+        border-left: 4px solid #198754;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        border-radius: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-plus-circle"></i> Create Deployment Batch
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('batches_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Batches
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Form Column -->
+    <div class="col-lg-8">
+        <form method="POST" action="{{ url_for('batch_create') }}" id="batch-form">
+            <!-- Venue Selection -->
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="bi bi-building"></i> Venue Selection
+                </h5>
+                <div class="mb-3">
+                    <label for="venue" class="form-label">
+                        Venue <span class="text-danger">*</span>
+                    </label>
+                    <select name="venue_code" id="venue" class="form-select" required onchange="updateVenueInfo()">
+                        <option value="">Select a venue...</option>
+                        {% for venue in venues %}
+                            <option value="{{ venue.code }}"
+                                    data-name="{{ venue.name }}"
+                                    data-location="{{ venue.location or 'N/A' }}"
+                                    data-kxp2-available="{{ venue.kxp2_available or 0 }}"
+                                    data-kxp2-assigned="{{ venue.kxp2_assigned or 0 }}">
+                                {{ venue.code }} - {{ venue.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">
+                        Select the venue where devices will be deployed
+                    </div>
+                    <div id="venue-info" class="mt-2" style="display: none;">
+                        <small class="text-muted">
+                            <strong>Location:</strong> <span id="venue-location"></span><br>
+                            <strong>Available KXP2 Hostnames:</strong> <span id="venue-kxp2-available"></span><br>
+                            <strong>Assigned KXP2 Hostnames:</strong> <span id="venue-kxp2-assigned"></span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Type Selection -->
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="bi bi-box-seam"></i> Product Type
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="product-option">
+                            <input type="radio" name="product_type" value="KXP2" class="form-check-input me-2" required onchange="updateProductInfo('KXP2')">
+                            <div class="d-inline-block">
+                                <span class="badge bg-primary product-badge">KXP2</span>
+                                <strong class="d-block mt-2">KartXPro Dual Camera</strong>
+                                <small class="text-muted">Pool-based sequential assignment</small>
+                            </div>
+                        </label>
+                        <div id="kxp2-availability" style="display: none;"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="product-option">
+                            <input type="radio" name="product_type" value="RXP2" class="form-check-input me-2" required onchange="updateProductInfo('RXP2')">
+                            <div class="d-inline-block">
+                                <span class="badge bg-info product-badge">RXP2</span>
+                                <strong class="d-block mt-2">RaceXPro Dual Camera</strong>
+                                <small class="text-muted">Serial-based dynamic creation</small>
+                            </div>
+                        </label>
+                        <div id="rxp2-info" style="display: none;">
+                            <div class="availability-success">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>RXP2 batches create hostnames dynamically</strong><br>
+                                <small>Hostnames are generated on-demand using device serial numbers</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Configuration -->
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="bi bi-sliders"></i> Batch Configuration
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="total_count" class="form-label">
+                                Total Device Count <span class="text-danger">*</span>
+                            </label>
+                            <input type="number"
+                                   name="total_count"
+                                   id="total_count"
+                                   class="form-control"
+                                   min="1"
+                                   max="1000"
+                                   required
+                                   onchange="validateCount()">
+                            <div class="form-text">
+                                Number of devices to deploy in this batch (1-1000)
+                            </div>
+                            <div id="count-warning" style="display: none;"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">
+                                Priority
+                            </label>
+                            <input type="number"
+                                   name="priority"
+                                   id="priority"
+                                   class="form-control"
+                                   value="0"
+                                   min="-999"
+                                   max="999">
+                            <div class="form-text">
+                                Higher priority batches process first (can be negative)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('batches_list') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg" id="submit-btn" disabled>
+                    <i class="bi bi-check-circle"></i> Create Batch
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Panel Column -->
+    <div class="col-lg-4">
+        <div class="help-panel">
+            <h5>
+                <i class="bi bi-question-circle"></i> Batch Deployment Guide
+            </h5>
+
+            <div class="section">
+                <h6>KXP2 vs RXP2 Workflow</h6>
+                <p class="small mb-2">
+                    <strong>KXP2 (KartXPro):</strong><br>
+                    Uses pre-loaded kart number pools. Hostnames are assigned sequentially from available pool entries.
+                    Format: <code>KXP2-VENUE-###</code>
+                </p>
+                <p class="small">
+                    <strong>RXP2 (RaceXPro):</strong><br>
+                    Creates hostnames dynamically during deployment using device serial numbers. No pre-loading required.
+                    Format: <code>RXP2-VENUE-SERIAL</code>
+                </p>
+            </div>
+
+            <div class="section">
+                <h6>Priority System</h6>
+                <p class="small">
+                    Batches are processed in priority order (highest first). Use priority to manage deployment queues:
+                </p>
+                <ul class="small mb-0">
+                    <li>High priority: 100+</li>
+                    <li>Normal priority: 0 (default)</li>
+                    <li>Low priority: -100 or lower</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h6>Example Scenarios</h6>
+                <div class="small">
+                    <p class="mb-2">
+                        <strong>Scenario 1: New Venue Setup</strong><br>
+                        Create KXP2 batch with 50 devices for immediate deployment (priority: 100)
+                    </p>
+                    <p class="mb-2">
+                        <strong>Scenario 2: Device Replacements</strong><br>
+                        Create RXP2 batch with 5 devices for replacement units (priority: 50)
+                    </p>
+                    <p class="mb-0">
+                        <strong>Scenario 3: Future Deployment</strong><br>
+                        Create batch with low priority for scheduled deployment next month (priority: -50)
+                    </p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h6>Best Practices</h6>
+                <ul class="small mb-0">
+                    <li>Ensure sufficient hostname pool for KXP2 batches</li>
+                    <li>Start with smaller batch sizes for testing</li>
+                    <li>Monitor active batches on the dashboard</li>
+                    <li>Use priority to manage concurrent deployments</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let venueKxp2Available = 0;
+
+function updateVenueInfo() {
+    const venueSelect = document.getElementById('venue');
+    const venueInfo = document.getElementById('venue-info');
+    const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+
+    if (venueSelect.value) {
+        const venueName = selectedOption.getAttribute('data-name');
+        const venueLocation = selectedOption.getAttribute('data-location');
+        const kxp2Available = parseInt(selectedOption.getAttribute('data-kxp2-available') || 0);
+        const kxp2Assigned = parseInt(selectedOption.getAttribute('data-kxp2-assigned') || 0);
+
+        document.getElementById('venue-location').textContent = venueLocation;
+        document.getElementById('venue-kxp2-available').textContent = kxp2Available;
+        document.getElementById('venue-kxp2-assigned').textContent = kxp2Assigned;
+        venueInfo.style.display = 'block';
+
+        venueKxp2Available = kxp2Available;
+        validateCount();
+    } else {
+        venueInfo.style.display = 'none';
+        venueKxp2Available = 0;
+    }
+
+    checkFormValid();
+}
+
+function updateProductInfo(productType) {
+    const kxp2Availability = document.getElementById('kxp2-availability');
+    const rxp2Info = document.getElementById('rxp2-info');
+
+    if (productType === 'KXP2') {
+        kxp2Availability.style.display = 'block';
+        rxp2Info.style.display = 'none';
+        validateCount();
+    } else {
+        kxp2Availability.style.display = 'none';
+        rxp2Info.style.display = 'block';
+        // Clear KXP2 warnings
+        document.getElementById('count-warning').style.display = 'none';
+    }
+
+    checkFormValid();
+}
+
+function validateCount() {
+    const countInput = document.getElementById('total_count');
+    const countWarning = document.getElementById('count-warning');
+    const kxp2Availability = document.getElementById('kxp2-availability');
+    const productTypeKXP2 = document.querySelector('input[name="product_type"][value="KXP2"]');
+
+    if (!productTypeKXP2 || !productTypeKXP2.checked) {
+        countWarning.style.display = 'none';
+        return;
+    }
+
+    const count = parseInt(countInput.value || 0);
+
+    if (count > venueKxp2Available) {
+        countWarning.innerHTML = `
+            <div class="availability-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Insufficient hostnames!</strong><br>
+                <small>You requested ${count} devices but only ${venueKxp2Available} KXP2 hostnames are available.
+                Please <a href="${'{{ url_for("kart_numbers_bulk_import") }}'}" target="_blank">import more kart numbers</a> or reduce the count.</small>
+            </div>
+        `;
+        countWarning.style.display = 'block';
+
+        kxp2Availability.innerHTML = `
+            <div class="availability-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Pool shortage:</strong> ${venueKxp2Available} available, ${count - venueKxp2Available} short
+            </div>
+        `;
+    } else if (count > 0 && count <= venueKxp2Available) {
+        countWarning.style.display = 'none';
+        kxp2Availability.innerHTML = `
+            <div class="availability-success">
+                <i class="bi bi-check-circle"></i>
+                <strong>Pool sufficient:</strong> ${venueKxp2Available} available, ${count} needed, ${venueKxp2Available - count} remaining
+            </div>
+        `;
+    } else {
+        countWarning.style.display = 'none';
+        kxp2Availability.innerHTML = '';
+    }
+
+    checkFormValid();
+}
+
+function checkFormValid() {
+    const venue = document.getElementById('venue').value;
+    const productType = document.querySelector('input[name="product_type"]:checked');
+    const count = parseInt(document.getElementById('total_count').value || 0);
+    const submitBtn = document.getElementById('submit-btn');
+
+    let valid = true;
+
+    // Check venue selected
+    if (!venue) valid = false;
+
+    // Check product type selected
+    if (!productType) valid = false;
+
+    // Check count
+    if (count < 1) valid = false;
+
+    // Check KXP2 availability
+    if (productType && productType.value === 'KXP2') {
+        if (count > venueKxp2Available) valid = false;
+    }
+
+    submitBtn.disabled = !valid;
+}
+
+// Initialize form validation on load
+document.addEventListener('DOMContentLoaded', function() {
+    checkFormValid();
+});
+</script>
+{% endblock %}

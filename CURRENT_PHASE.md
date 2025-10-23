@@ -1,11 +1,11 @@
-# Current Phase: Phase 7 - Web Management Interface
+# Current Phase: Phase 8 - Enhanced Python Deployment Scripts
 
 **Status**: ⏳ Ready to Start
 **VM IP**: 192.168.101.146
 
 ## Quick Access
 
-📖 **Full Phase Documentation**: [docs/phases/Phase_7_Web_Interface.md](docs/phases/Phase_7_Web_Interface.md)
+📖 **Full Phase Documentation**: [docs/phases/Phase_8_Python_Scripts.md](docs/phases/Phase_8_Python_Scripts.md)
 
 ## Quick Start
 
@@ -25,40 +25,48 @@ cd /opt/rpi-deployment
 claude
 ```
 
-## Phase 7 Tasks
+## Phase 8 Tasks
 
-- [ ] Set up Flask web application structure
-- [ ] Create base HTML templates (layout, navigation)
-- [ ] Implement dashboard page (deployment stats, system status)
-- [ ] Create venue management UI (list, create, edit)
-- [ ] Implement kart number management UI (bulk import, individual add/remove)
-- [ ] Create deployment monitoring page (real-time status updates)
-- [ ] Implement WebSocket support for live updates
-- [ ] Test all web interface functionality
-- [ ] Create user documentation for web interface
+- [ ] Implement deployment_server.py (Flask API on port 5001)
+- [ ] Create pi_installer.py (runs on Raspberry Pi during network boot)
+- [ ] Implement API endpoints (/api/config, /api/status, /images/<filename>, /health)
+- [ ] Test API endpoints functionality
+- [ ] Verify hostname integration with HostnameManager
+- [ ] Test end-to-end deployment workflow (simulation)
+- [ ] Create comprehensive unit tests for both scripts
+- [ ] Document API specifications
+- [ ] Create user documentation for deployment scripts
 
 ## Important Notes
 
-⚠️ **Prerequisites**: Phase 6 must be complete (Hostname Management System operational) ✅
+⚠️ **Prerequisites**: Phase 7 must be complete (Web Management Interface operational) ✅
 
-**Web Interface Requirements**:
-- Flask application on port 5000 (management network 192.168.101.146)
-- Bootstrap 5 for responsive design
-- WebSocket support via flask-socketio
-- Integration with HostnameManager class from Phase 6
-- Real-time deployment monitoring
-- Venue and kart number management
-- System health dashboard
+**Deployment Server Requirements**:
+- Flask API on port 5001 (deployment network 192.168.151.1)
+- Integration with HostnameManager for hostname assignment
+- Product-specific image selection (KXP2/RXP2)
+- Deployment history tracking in SQLite database
+- Real-time status reporting
+- Error handling and logging
 
-**Key Features**:
-- Real-time deployment status updates
-- Venue management (create, view, edit, statistics)
-- Kart number pool management (bulk import, add, remove)
-- Deployment history viewer
-- System status monitoring
-- Responsive design (desktop and mobile)
+**Pi Installer Requirements**:
+- Runs on Raspberry Pi during network boot
+- Verify SD card is present and writable
+- Request hostname assignment from server
+- Download appropriate master image (KXP2 or RXP2)
+- Write image to SD card with progress reporting
+- Configure assigned hostname
+- Report status back to server
+- Reboot into newly installed system
 
-**Recommended Agent**: Use @flask-ux-designer for web UI design and implementation
+**Key Objectives**:
+- Complete deployment automation (server-side)
+- Pi installer script ready for network boot
+- Full integration with hostname management
+- Comprehensive error handling
+- Production-ready logging
+
+**Recommended Agent**: Use @python-tdd-architect for deployment script development
 
 ## Navigation
 
@@ -69,5 +77,5 @@ claude
 ---
 
 **Last Updated**: 2025-10-23
-**Previous Phase**: [Phase 6 - Hostname Management System](docs/phases/Phase_6_Hostname_Management.md) ✅ COMPLETE
-**Next Phase**: [Phase 8 - Enhanced Python Deployment Scripts](docs/phases/Phase_8_Python_Scripts.md)
+**Previous Phase**: [Phase 7 - Web Management Interface](docs/phases/Phase_7_Web_Interface.md) ✅ COMPLETE
+**Next Phase**: [Phase 9 - Service Management](docs/phases/Phase_9_Service_Management.md)
