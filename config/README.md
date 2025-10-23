@@ -86,6 +86,51 @@ sudo systemctl status nginx
 
 **See Also**: `nginx/BACKUP_INFO.txt` for detailed restore instructions
 
+### Systemd Service Files
+
+**Deployment Location**: `/etc/systemd/system/`
+**Purpose**: Automated service management for deployment applications
+**Modified In**: Phase 9
+**Key Features**:
+- Auto-start on boot
+- Auto-restart on failure (10-second delay)
+- Proper service dependencies
+- Runs as non-root user (captureworks)
+- Security hardening (NoNewPrivileges, PrivateTmp)
+
+**Files Backed Up**:
+- `rpi-deployment.service` (890B) - Deployment server API service (port 5001)
+- `rpi-web.service` (928B) - Web management interface service (port 5000)
+
+**To Deploy**:
+```bash
+# Deploy both service files
+sudo cp config/rpi-deployment.service /etc/systemd/system/
+sudo cp config/rpi-web.service /etc/systemd/system/
+
+# Reload systemd daemon
+sudo systemctl daemon-reload
+
+# Enable services for auto-start on boot
+sudo systemctl enable rpi-deployment rpi-web
+
+# Start services
+sudo systemctl start rpi-deployment rpi-web
+
+# Verify services are running
+sudo systemctl status rpi-deployment rpi-web
+
+# Test endpoints
+curl http://192.168.151.1:5001/health      # Deployment API
+curl http://192.168.101.146:5000/          # Web interface
+```
+
+**Service Dependencies**:
+- `rpi-deployment.service` - Starts first, provides deployment API
+- `rpi-web.service` - Depends on rpi-deployment, provides web UI
+
+**⚠️ Important**: Both services require PYTHONPATH environment variable to access Flask packages installed in user's home directory.
+
 ## TFTP Boot Files
 
 ### tftp-config.txt
@@ -167,11 +212,20 @@ If the deployment server needs to be rebuilt from scratch:
    sudo cp config/nginx/sites-available/rpi-deployment /etc/nginx/sites-available/rpi-deployment
    sudo ln -sf /etc/nginx/sites-available/rpi-deployment /etc/nginx/sites-enabled/rpi-deployment
 
+   # Deploy systemd service files
+   sudo cp config/rpi-deployment.service /etc/systemd/system/
+   sudo cp config/rpi-web.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+
    # Apply network tuning
    sudo sysctl -p /etc/sysctl.d/99-rpi-deployment-network.conf
 
    # Restart services
    sudo systemctl restart dnsmasq nginx
+
+   # Enable and start deployment services
+   sudo systemctl enable rpi-deployment rpi-web
+   sudo systemctl start rpi-deployment rpi-web
    ```
 
 4. **Download Boot Files** (Phase 4):
@@ -193,6 +247,11 @@ If the deployment server needs to be rebuilt from scratch:
    curl http://192.168.151.1/nginx-health    # Deployment interface
    sudo nginx -t                              # Configuration syntax
    sudo systemctl status nginx dnsmasq       # Service status
+
+   # Phase 9: Deployment services
+   sudo systemctl status rpi-deployment rpi-web  # Service status
+   curl http://192.168.151.1:5001/health     # Deployment API health
+   curl http://192.168.101.146:5000/         # Web interface
    ```
 
 ## Configuration Change Log
@@ -206,6 +265,8 @@ If the deployment server needs to be rebuilt from scratch:
 | tftp-cmdline.txt | 2025-10-23 | Phase 4 | Kernel command line with HTTP installer placeholders |
 | nginx/sites-available/rpi-deployment | 2025-10-23 | Phase 5 | Dual-network HTTP server configuration |
 | nginx/nginx.conf | 2025-10-23 | Phase 5 | Main nginx configuration (no changes from default) |
+| rpi-deployment.service | 2025-10-23 | Phase 9 | Systemd service for deployment API (port 5001) |
+| rpi-web.service | 2025-10-23 | Phase 9 | Systemd service for web interface (port 5000) |
 
 ## Important Notes
 
@@ -218,5 +279,5 @@ If the deployment server needs to be rebuilt from scratch:
 ---
 
 **Last Updated**: 2025-10-23
-**Phases Covered**: Phase 3 (DHCP/TFTP), Phase 4 (Boot Files), Phase 5 (HTTP Server)
-**Next Phase**: Phase 6 (Hostname Management System)
+**Phases Covered**: Phase 3 (DHCP/TFTP), Phase 4 (Boot Files), Phase 5 (HTTP Server), Phase 9 (Service Management)
+**Next Phase**: Phase 10 (Testing and Validation)

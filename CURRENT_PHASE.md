@@ -1,11 +1,11 @@
-# Current Phase: Phase 9 - Service Management
+# Current Phase: Phase 10 - Testing and Validation
 
 **Status**: ⏳ Ready to Start
 **VM IP**: 192.168.101.146
 
 ## Quick Access
 
-📖 **Full Phase Documentation**: [docs/phases/Phase_9_Service_Management.md](docs/phases/Phase_9_Service_Management.md)
+📖 **Full Phase Documentation**: [docs/phases/Phase_10_Testing.md](docs/phases/Phase_10_Testing.md)
 
 ## Quick Start
 
@@ -25,47 +25,50 @@ cd /opt/rpi-deployment
 claude
 ```
 
-## Phase 9 Tasks
+## Phase 10 Tasks
 
-- [ ] Create systemd service file for deployment server (rpi-deployment.service)
-- [ ] Create systemd service file for web interface (rpi-web.service)
-- [ ] Configure service dependencies and restart policies
-- [ ] Enable services for auto-start on boot
-- [ ] Start both services
-- [ ] Verify services are running correctly
-- [ ] Test auto-restart on failure
-- [ ] Test boot persistence (reboot server)
-- [ ] Configure service logging
-- [ ] Create service management documentation
+- [ ] Create end-to-end validation script
+- [ ] Test single Pi network boot on deployment network (VLAN 151)
+- [ ] Verify DHCP/TFTP boot process with real Pi
+- [ ] Test hostname assignment (KXP2 and RXP2)
+- [ ] Verify image download and installation workflow
+- [ ] Test batch deployment functionality
+- [ ] Validate all services working together
+- [ ] Check deployment history and logging
+- [ ] Test error handling and recovery scenarios
+- [ ] Create comprehensive testing documentation
 
 ## Important Notes
 
-⚠️ **Prerequisites**: Phase 8 must be complete (Python deployment scripts operational) ✅
+⚠️ **Prerequisites**: Phase 9 must be complete (systemd services operational) ✅
 
-**Service Requirements**:
-- rpi-deployment.service: Runs deployment_server.py on port 5001 (deployment network)
-- rpi-web.service: Runs web/app.py on port 5000 (management network)
-- Both run as 'captureworks' user (not root)
-- Auto-restart on failure (10-second delay)
-- Start after network is available
-- Dependency: rpi-web requires rpi-deployment
+**Testing Requirements**:
+- At least one Raspberry Pi 5 with blank SD card
+- Pi connected to VLAN 151 (deployment network)
+- UniFi DHCP disabled on VLAN 151
+- Test venue configured in database
+- Master image available (or use dummy image for testing)
+- Monitoring tools ready (tcpdump, logs, web interface)
 
-**Service Management Commands**:
+**Validation Commands**:
 ```bash
-# Check status
-sudo systemctl status rpi-deployment rpi-web
+# Monitor DHCP/TFTP on deployment network
+sudo tcpdump -i eth1 port 67 or port 68 or port 69
 
-# Start/stop services
-sudo systemctl start rpi-deployment
-sudo systemctl start rpi-web
+# Watch deployment logs in real-time
+tail -f /opt/rpi-deployment/logs/deployment_$(date +%Y%m%d).log
 
-# Enable/disable auto-start
-sudo systemctl enable rpi-deployment
-sudo systemctl enable rpi-web
+# Check service status
+sudo systemctl status rpi-deployment rpi-web dnsmasq nginx
 
-# View logs
-sudo journalctl -u rpi-deployment -f
-sudo journalctl -u rpi-web -f
+# View deployment history
+sqlite3 /opt/rpi-deployment/database/deployment.db "SELECT * FROM deployment_history ORDER BY started_at DESC LIMIT 5;"
+
+# Test API endpoints
+curl http://192.168.151.1:5001/health
+curl -X POST http://192.168.151.1:5001/api/config \
+  -H "Content-Type: application/json" \
+  -d '{"product_type": "KXP2", "venue_code": "CORO", "serial_number": "12345678"}'
 ```
 
 ## Navigation
@@ -77,5 +80,5 @@ sudo journalctl -u rpi-web -f
 ---
 
 **Last Updated**: 2025-10-23
-**Previous Phase**: [Phase 8 - Enhanced Python Deployment Scripts](docs/phases/Phase_8_Python_Scripts.md) ✅ COMPLETE
-**Next Phase**: [Phase 10 - Testing and Validation](docs/phases/Phase_10_Testing_Validation.md)
+**Previous Phase**: [Phase 9 - Service Management](docs/phases/Phase_9_Service_Management.md) ✅ COMPLETE
+**Next Phase**: [Phase 11 - Creating Master Image](docs/phases/Phase_11_Master_Image.md)
