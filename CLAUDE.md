@@ -142,6 +142,46 @@ Automates deployment server VM creation on Proxmox:
 /var/www/deployment/           # Nginx web root
 ```
 
+## Custom Agents
+
+The project has specialized agents for different technical domains. **Use these agents proactively** when their expertise is needed:
+
+### Phase 3+ Agent Recommendations
+
+**For DHCP/TFTP Configuration (Phase 3):**
+- **@linux-ubuntu-specialist** - Primary agent for dnsmasq configuration, systemd services, network optimization
+- **@research-documentation-specialist** - Look up dnsmasq, TFTP, and iPXE documentation
+
+**For HTTP Server & Python Development (Phases 5-8):**
+- **@nginx-config-specialist** - Nginx reverse proxy, dual-network setup, static file serving
+- **@python-tdd-architect** - Flask applications, deployment scripts, test-driven development
+- **@code-auditor** - Review Python code before deployment
+
+**For Documentation & Phase Transitions:**
+- **@doc-admin-agent** - Update IMPLEMENTATION_TRACKER.md, manage phase transitions, log issues
+
+### Available Agents
+
+| Agent | Use When | Key Capabilities |
+|-------|----------|------------------|
+| **linux-ubuntu-specialist** | System optimization, bash scripting, systemd services, kernel tuning, network configuration | Deep Linux/Ubuntu expertise, performance optimization, service management, troubleshooting |
+| **nginx-config-specialist** | Web server setup, reverse proxy, SSL/TLS, virtual hosts, load balancing | Nginx configuration, security hardening, performance tuning |
+| **python-tdd-architect** | Writing Python code, refactoring, creating tests, clean architecture | Test-driven development, preventing code duplication, Flask applications |
+| **code-auditor** | Reviewing code before deployment, validating implementations | Code validation, catching issues early, ensuring quality |
+| **research-documentation-specialist** | Looking up package docs, finding technical details, clarifying requirements | Documentation research, best practices, technology validation |
+| **doc-admin-agent** | Phase transitions, updating trackers, logging issues | IMPLEMENTATION_TRACKER.md updates, phase management, issue tracking |
+
+**Usage Example:**
+```
+User: "Configure dnsmasq for DHCP and TFTP on the deployment network"
+Assistant: "I'm going to use the @linux-ubuntu-specialist agent for this Linux system configuration task"
+```
+
+**Agent Invocation:**
+- Agents are automatically available when Claude Code detects their need
+- You can explicitly request an agent with: `@agent-name` in your prompt
+- Agents run autonomously and return comprehensive solutions
+
 ## Phase 2: Seamless Server Transition
 
 **📖 See [TRANSITION_TO_SERVER.md](TRANSITION_TO_SERVER.md) for complete guide**
