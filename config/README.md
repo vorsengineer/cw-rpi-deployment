@@ -44,6 +44,48 @@ sudo cp 99-rpi-deployment-network.conf /etc/sysctl.d/
 sudo sysctl -p /etc/sysctl.d/99-rpi-deployment-network.conf
 ```
 
+### nginx Configuration Files
+
+See `nginx/` subdirectory for complete nginx configuration backup.
+
+**Deployment Location**: `/etc/nginx/`
+**Purpose**: HTTP server for dual-network architecture
+**Modified In**: Phase 5
+**Key Features**:
+- Management interface: 192.168.101.146:80 (reverse proxy to Flask apps)
+- Deployment interface: 192.168.151.1:80 (static file serving for master images)
+- Network isolation enforced (specific IP binding only)
+- Large file support (8GB) with sendfile optimization
+- WebSocket support for real-time dashboard updates
+
+**Files Backed Up**:
+- `nginx.conf` (1.5KB) - Main nginx configuration
+- `sites-available/rpi-deployment` (7.8KB) - Dual-network site configuration
+- `sites-available/default` (2.4KB) - Default site (disabled)
+- `snippets/fastcgi-php.conf` (423B) - FastCGI PHP parameters
+- `snippets/snakeoil.conf` (217B) - Self-signed SSL example
+
+**To Deploy**:
+```bash
+# Deploy main configuration
+sudo cp config/nginx/nginx.conf /etc/nginx/nginx.conf
+
+# Deploy site configuration
+sudo cp config/nginx/sites-available/rpi-deployment /etc/nginx/sites-available/rpi-deployment
+
+# Enable site
+sudo ln -sf /etc/nginx/sites-available/rpi-deployment /etc/nginx/sites-enabled/rpi-deployment
+
+# Test configuration
+sudo nginx -t
+
+# Restart nginx
+sudo systemctl restart nginx
+sudo systemctl status nginx
+```
+
+**See Also**: `nginx/BACKUP_INFO.txt` for detailed restore instructions
+
 ## TFTP Boot Files
 
 ### tftp-config.txt
@@ -120,11 +162,16 @@ If the deployment server needs to be rebuilt from scratch:
    sudo chmod 644 /tftpboot/*.txt
    sudo chown root:nogroup /tftpboot/*.txt
 
+   # Deploy nginx configuration
+   sudo cp config/nginx/nginx.conf /etc/nginx/nginx.conf
+   sudo cp config/nginx/sites-available/rpi-deployment /etc/nginx/sites-available/rpi-deployment
+   sudo ln -sf /etc/nginx/sites-available/rpi-deployment /etc/nginx/sites-enabled/rpi-deployment
+
    # Apply network tuning
    sudo sysctl -p /etc/sysctl.d/99-rpi-deployment-network.conf
 
    # Restart services
-   sudo systemctl restart dnsmasq
+   sudo systemctl restart dnsmasq nginx
    ```
 
 4. **Download Boot Files** (Phase 4):
@@ -136,9 +183,16 @@ If the deployment server needs to be rebuilt from scratch:
    sudo chown root:nogroup kernel8.img bcm2712-rpi-5-b.dtb
    ```
 
-5. **Validate** (Phase 3):
+5. **Validate**:
    ```bash
+   # Phase 3: DHCP/TFTP
    /opt/rpi-deployment/scripts/validate_phase3.sh
+
+   # Phase 5: nginx HTTP serving
+   curl http://192.168.101.146/nginx-health  # Management interface
+   curl http://192.168.151.1/nginx-health    # Deployment interface
+   sudo nginx -t                              # Configuration syntax
+   sudo systemctl status nginx dnsmasq       # Service status
    ```
 
 ## Configuration Change Log
@@ -150,6 +204,8 @@ If the deployment server needs to be rebuilt from scratch:
 | 99-rpi-deployment-network.conf | 2025-10-23 | Phase 3 | Network performance tuning |
 | tftp-config.txt | 2025-10-23 | Phase 4 | Raspberry Pi 5 boot configuration |
 | tftp-cmdline.txt | 2025-10-23 | Phase 4 | Kernel command line with HTTP installer placeholders |
+| nginx/sites-available/rpi-deployment | 2025-10-23 | Phase 5 | Dual-network HTTP server configuration |
+| nginx/nginx.conf | 2025-10-23 | Phase 5 | Main nginx configuration (no changes from default) |
 
 ## Important Notes
 
@@ -162,5 +218,5 @@ If the deployment server needs to be rebuilt from scratch:
 ---
 
 **Last Updated**: 2025-10-23
-**Phases Covered**: Phase 3 (DHCP/TFTP), Phase 4 (Boot Files)
-**Next Phase**: Phase 5 (HTTP Server Configuration)
+**Phases Covered**: Phase 3 (DHCP/TFTP), Phase 4 (Boot Files), Phase 5 (HTTP Server)
+**Next Phase**: Phase 6 (Hostname Management System)

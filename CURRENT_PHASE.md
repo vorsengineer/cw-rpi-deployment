@@ -1,11 +1,11 @@
-# Current Phase: Phase 5 - HTTP Server Configuration
+# Current Phase: Phase 6 - Hostname Management System
 
 **Status**: ⏳ Ready to Start
 **VM IP**: 192.168.101.146
 
 ## Quick Access
 
-📖 **Full Phase Documentation**: [docs/phases/Phase_5_HTTP_Server.md](docs/phases/Phase_5_HTTP_Server.md)
+📖 **Full Phase Documentation**: [docs/phases/Phase_6_Hostname_Management.md](docs/phases/Phase_6_Hostname_Management.md)
 
 ## Quick Start
 
@@ -25,28 +25,39 @@ cd /opt/rpi-deployment
 claude
 ```
 
-## Phase 5 Tasks
+## Phase 6 Tasks
 
-- [ ] Configure nginx for dual-network architecture
-- [ ] Set up management interface (192.168.101.146:80) - reverse proxy
-- [ ] Set up deployment interface (192.168.151.1:80) - static file serving
-- [ ] Test HTTP serving on both interfaces
-- [ ] Create placeholder for master images directory
-- [ ] Verify nginx configuration syntax
-- [ ] Test file serving via HTTP
+- [ ] Design SQLite database schema
+- [ ] Create database initialization script
+- [ ] Implement venue management (4-letter codes)
+- [ ] Implement hostname pool management
+- [ ] Create hostname assignment logic (KXP2/RXP2)
+- [ ] Build bulk import functionality for kart numbers
+- [ ] Test database operations
+- [ ] Create database management utilities
 
 ## Important Notes
 
-⚠️ **Prerequisites**: Phase 4 must be complete (Boot files configured) ✅
+⚠️ **Prerequisites**: Phase 5 must be complete (HTTP server configured) ✅
 
-**Dual Network Architecture**:
-- Management Network: eth0 (192.168.101.146 - VLAN 101) - Web UI access
-- Deployment Network: eth1 (192.168.151.1 - VLAN 151) - Image distribution
-- No routing between networks (security isolation)
+**Hostname Formats**:
+- KXP2 (KartXPro): `KXP2-[VENUE]-[NUMBER]` (e.g., KXP2-CORO-001)
+- RXP2 (RaceXPro): `RXP2-[VENUE]-[SERIAL]` (e.g., RXP2-CORO-ABC12345)
 
-**HTTP Server Purpose**:
-- Management interface: Reverse proxy to Flask apps (ports 5000, 5001)
-- Deployment interface: Serve master images (4-8GB .img files) to Raspberry Pis
+**Database Requirements**:
+- Location: /opt/rpi-deployment/database/deployment.db
+- Venue management with 4-letter codes
+- Pre-loadable kart number pools for KXP2
+- Automatic hostname assignment
+- Deployment history tracking
+- Status tracking (available, assigned, in-use)
+
+**Key Features**:
+- Product-specific naming (KXP2 vs RXP2)
+- Venue-based organization
+- Bulk import for kart numbers
+- Assignment tracking with timestamps
+- MAC address and serial number correlation
 
 ## Navigation
 
@@ -57,5 +68,5 @@ claude
 ---
 
 **Last Updated**: 2025-10-23
-**Previous Phase**: [Phase 4 - Boot Files Preparation](docs/phases/Phase_4_Boot_Files.md) ✅ COMPLETE
-**Next Phase**: [Phase 6 - Hostname Management System](docs/phases/Phase_6_Hostname_Management.md)
+**Previous Phase**: [Phase 5 - HTTP Server Configuration](docs/phases/Phase_5_HTTP_Server.md) ✅ COMPLETE
+**Next Phase**: [Phase 7 - Web Management Interface](docs/phases/Phase_7_Web_Interface.md)
