@@ -12,6 +12,8 @@ import re
 import threading
 import time
 import shutil
+import logging
+from pathlib import Path
 from typing import Optional, Dict, List, Any
 from datetime import datetime
 
@@ -27,6 +29,21 @@ from hostname_manager import HostnameManager
 
 # Import configuration
 from config import get_config
+
+# Configure logging
+LOG_DIR = Path("/opt/rpi-deployment/logs")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_DIR / "web_app.log"),
+        logging.StreamHandler()  # Also to stdout for systemd journal
+    ]
+)
+
+logger = logging.getLogger("WebApp")
 
 # Global SocketIO instance (initialized in create_app)
 socketio = None
