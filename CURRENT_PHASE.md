@@ -1,11 +1,11 @@
-# Current Phase: Phase 3 - DHCP and TFTP Configuration
+# Current Phase: Phase 4 - Boot Files Preparation
 
 **Status**: ⏳ Ready to Start
 **VM IP**: 192.168.101.146
 
 ## Quick Access
 
-📖 **Full Phase Documentation**: [docs/phases/Phase_3_DHCP_TFTP.md](docs/phases/Phase_3_DHCP_TFTP.md)
+📖 **Full Phase Documentation**: [docs/phases/Phase_4_Boot_Files.md](docs/phases/Phase_4_Boot_Files.md)
 
 ## Quick Start
 
@@ -25,24 +25,32 @@ cd /opt/rpi-deployment
 claude
 ```
 
-## Phase 3 Tasks
+## Phase 4 Tasks
 
-- [ ] Configure dnsmasq for DHCP on deployment network (192.168.151.x)
-- [ ] Configure TFTP server for boot files
-- [ ] Test DHCP range (192.168.151.100-250)
-- [ ] Verify no DHCP conflicts with UniFi
-- [ ] Enable and start dnsmasq service
-- [ ] Test TFTP file serving
-- [ ] Validate dnsmasq logs
+- [ ] Download Raspberry Pi 5 firmware files (bootcode.bin, start*.elf, fixup*.dat)
+- [ ] Clone Raspberry Pi firmware repository
+- [ ] Copy boot files to TFTP directory (/tftpboot/)
+- [ ] Build or download iPXE for ARM64 UEFI
+- [ ] Create iPXE boot script (/tftpboot/bootfiles/boot.ipxe)
+- [ ] Configure iPXE to load kernel and initrd via HTTP
+- [ ] Set server IP to deployment network (192.168.151.1)
+- [ ] Test TFTP file serving for boot files
+- [ ] Verify boot script syntax and configuration
 
 ## Important Notes
 
-⚠️ **CRITICAL**: Ensure UniFi DHCP is disabled on VLAN 151 before starting dnsmasq to avoid conflicts!
+⚠️ **Prerequisites**: Phase 3 must be complete (DHCP and TFTP configured) ✅
 
 **Network Configuration**:
 - Management: eth0 (192.168.101.146 - VLAN 101)
 - Deployment: eth1 (192.168.151.1 - VLAN 151)
-- DHCP Range: 192.168.151.100-250
+- TFTP Root: /tftpboot
+- Boot Files Directory: /tftpboot/bootfiles/
+
+**Key Files**:
+- Boot firmware: /tftpboot/bootcode.bin, start*.elf, fixup*.dat
+- iPXE boot script: /tftpboot/bootfiles/boot.ipxe
+- Kernel/initrd served via HTTP (configured in Phase 5)
 
 ## Navigation
 
@@ -53,5 +61,5 @@ claude
 ---
 
 **Last Updated**: 2025-10-23
-**Previous Phase**: [Phase 2 - Deployment Server Base Configuration](docs/phases/Phase_2_Base_Configuration.md) ✅ COMPLETE
-**Next Phase**: [Phase 4 - Boot Files Preparation](docs/phases/Phase_4_Boot_Files.md)
+**Previous Phase**: [Phase 3 - DHCP and TFTP Configuration](docs/phases/Phase_3_DHCP_TFTP.md) ✅ COMPLETE
+**Next Phase**: [Phase 5 - HTTP Server Configuration](docs/phases/Phase_5_HTTP_Server.md)

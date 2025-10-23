@@ -5,14 +5,15 @@
 ### Current Status
 - **Phase 1**: ✅ COMPLETE - VM provisioned at 192.168.101.146
 - **Phase 2**: ✅ COMPLETE - Server configured, all packages installed
-- **Phase 3**: ⏳ Ready to Start - DHCP and TFTP Configuration
+- **Phase 3**: ✅ COMPLETE - DHCP and TFTP configured (dnsmasq, 34/34 tests passed)
+- **Phase 4**: ⏳ Ready to Start - Boot Files Preparation
 
 ### Phase Documentation
 
 1. [Phase 1: Proxmox VM Provisioning](phases/Phase_1_Proxmox_VM_Provisioning.md) - ✅ COMPLETE
 2. [Phase 2: Deployment Server Base Configuration](phases/Phase_2_Base_Configuration.md) - ✅ COMPLETE
-3. [Phase 3: DHCP and TFTP Configuration](phases/Phase_3_DHCP_TFTP.md) - ⏳ In Progress
-4. [Phase 4: Boot Files Preparation](phases/Phase_4_Boot_Files.md)
+3. [Phase 3: DHCP and TFTP Configuration](phases/Phase_3_DHCP_TFTP.md) - ✅ COMPLETE
+4. [Phase 4: Boot Files Preparation](phases/Phase_4_Boot_Files.md) - ⏳ Current Phase
 5. [Phase 5: HTTP Server Configuration](phases/Phase_5_HTTP_Server.md)
 6. [Phase 6: Hostname Management System](phases/Phase_6_Hostname_Management.md)
 7. [Phase 7: Web Management Interface](phases/Phase_7_Web_Interface.md)
@@ -40,16 +41,23 @@
 
 ## Quick Start for Current Phase
 
-### Phase 3: Configure DHCP and TFTP
+**Current Phase**: Phase 4 - Boot Files Preparation
+
+**Quick Access**: See [@CURRENT_PHASE.md](../CURRENT_PHASE.md)
+
+**Phase 4 Tasks**:
+- Download Raspberry Pi 5 firmware files (bootcode.bin, start*.elf, fixup*.dat)
+- Build or download iPXE for ARM64 UEFI
+- Create iPXE boot script (`/tftpboot/bootfiles/boot.ipxe`)
+- Configure iPXE to load installer via HTTP
+- Test network boot with Raspberry Pi 5
+
+**Prerequisites**: ✅ Phase 3 complete (DHCP/TFTP configured)
+
+**SSH to Server**:
 ```bash
-# SSH to server
 ssh -i ssh_keys/deployment_key captureworks@192.168.101.146
-
-# Navigate to project
 cd /opt/rpi-deployment
-
-# Start Claude Code (if not already running)
-claude
 ```
 
-See [Phase 3 Documentation](phases/Phase_3_DHCP_TFTP.md) for detailed steps.
+**Full Documentation**: [Phase 4 Documentation](phases/Phase_4_Boot_Files.md)
