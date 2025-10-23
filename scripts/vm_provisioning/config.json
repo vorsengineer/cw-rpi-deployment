@@ -1,0 +1,59 @@
+{
+  "proxmox": {
+    "host": "192.168.11.194",
+    "user": "root@pam",
+    "password": "Ati4870_x5",
+    "node": "cw-dc01",
+    "verify_ssl": false
+  },
+  "vm": {
+    "vmid": 104,
+    "name": "cw-rpi-deployment01",
+    "cores": 4,
+    "memory": 8192,
+    "disk_size": "100G",
+    "storage": "vm_data",
+    "description": "KXP/RXP Deployment Server - Ubuntu 24.04 LTS (Cloud-Init)"
+  },
+  "cloud_init": {
+    "username": "captureworks",
+    "password": "Jankycorpltd01",
+    "hostname": "cw-rpi-deployment01",
+    "domain": "captureworks.eu",
+    "upgrade": true,
+    "packages": [
+      "qemu-guest-agent",
+      "openssh-server",
+      "python3",
+      "python3-pip",
+      "git",
+      "curl",
+      "wget",
+      "nginx",
+      "dnsmasq",
+      "tftpd-hpa",
+      "sqlite3",
+      "net-tools"
+    ]
+  },
+  "network": {
+    "management": {
+      "interface": "eth0",
+      "vlan": 101,
+      "dhcp": true,
+      "comment": "DHCP from UniFi VLAN 101"
+    },
+    "deployment": {
+      "interface": "eth1",
+      "vlan": 151,
+      "ip": "192.168.151.1/24",
+      "gateway": null
+    },
+    "dns": ["8.8.8.8"]
+  },
+  "cloud_image": {
+    "url": "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img",
+    "filename": "ubuntu-24.04-server-cloudimg-amd64.img",
+    "storage_path": "/var/lib/vz/template/iso/"
+  }
+}

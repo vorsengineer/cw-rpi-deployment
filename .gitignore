@@ -1,0 +1,49 @@
+# RPi5 Network Deployment System - Git Ignore Rules
+
+# Security - SSH Keys (NEVER commit private keys!)
+ssh_keys/
+
+# Temporary Files
+temp_archive/
+*.log
+nul
+
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Environment Variables
+.env
+.env.local
+
+# Claude Code Local Configuration
+.claude/
+
+# System Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+
+# Deployment Runtime (don't commit actual images or databases)
+images/*.img
+database/*.db
+logs/*.log
+
+# But keep directory structure
+!images/.gitkeep
+!database/.gitkeep
+!logs/.gitkeep
