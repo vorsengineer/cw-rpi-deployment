@@ -159,6 +159,7 @@ The project has specialized agents for different technical domains. **Use these 
 **For HTTP Server & Python Development (Phases 5-8):**
 - **@nginx-config-specialist** - Nginx reverse proxy, dual-network setup, static file serving
 - **@python-tdd-architect** - Flask applications, deployment scripts, test-driven development
+- **@flask-ux-designer** - Web UI design, Flask templates, responsive interfaces, dashboard creation
 - **@code-auditor** - Review Python code before deployment
 
 **For Documentation & Phase Transitions:**
@@ -171,6 +172,7 @@ The project has specialized agents for different technical domains. **Use these 
 | **linux-ubuntu-specialist** | System optimization, bash scripting, systemd services, kernel tuning, network configuration | Deep Linux/Ubuntu expertise, performance optimization, service management, troubleshooting |
 | **nginx-config-specialist** | Web server setup, reverse proxy, SSL/TLS, virtual hosts, load balancing | Nginx configuration, security hardening, performance tuning |
 | **python-tdd-architect** | Writing Python code, refactoring, creating tests, clean architecture | Test-driven development, preventing code duplication, Flask applications |
+| **flask-ux-designer** | Creating web interfaces, dashboards, forms, responsive designs for Flask apps | UX/UI design, Flask templates, HTML/CSS/JS, modern web interfaces, accessibility |
 | **code-auditor** | Reviewing code before deployment, validating implementations | Code validation, catching issues early, ensuring quality |
 | **research-documentation-specialist** | Looking up package docs, finding technical details, clarifying requirements | Documentation research, best practices, technology validation |
 | **doc-admin-agent** | Phase transitions, updating trackers, logging issues | IMPLEMENTATION_TRACKER.md updates, phase management, issue tracking |
