@@ -1,0 +1,37 @@
+Remote Agent Work Package Manifest
+===================================
+
+Created: Fri Oct 24 08:02:55 UTC 2025
+Package Name: Reference_Pi_-_KXP2_20251024_080255
+
+Target System:
+- Name: Reference Pi - KXP2
+- IP: 192.168.101.xxx
+- User: pi
+- Purpose: Create golden master images using RonR with direct NFS write
+
+Task:
+- Name: Setup RonR and Create Golden Master Image
+- Description: Install RonR tools, configure NFS client mount, create kxp2_master.img directly to server
+- Estimated Duration: 15-20 minutes
+
+Files Included:
+  - docs/REFERENCE_PI_SETUP.md
+  - docs/QUICK_START_GOLDEN_IMAGE.md
+  - scripts/register_master_image.sh
+  - templates/COMPLETION_REPORT_TEMPLATE.md
+
+Package Contents:
+  - REMOTE_AGENT_BRIEFING.md (main entry point)
+  - COMPLETION_REPORT_TEMPLATE.md
+  - transfer.sh (file transfer script)
+  - task-files/ (directory with all task files)
+  - MANIFEST.txt (this file)
+
+Transfer Instructions:
+  1. cd /opt/rpi-deployment/remote-packages/Reference_Pi_-_KXP2_20251024_080255
+  2. ./transfer.sh
+  3. SSH to remote: ssh pi@192.168.101.xxx
+  4. cd ~/remote-work-package
+  5. claude
+  6. Open REMOTE_AGENT_BRIEFING.md
