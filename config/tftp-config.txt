@@ -6,6 +6,10 @@
 # Kernel to load (ARM64)
 kernel=kernel8.img
 
+# CRITICAL: Load initramfs into memory
+# The bootloader must load this BEFORE the kernel starts
+initramfs initrd.img followkernel
+
 # Enable 64-bit mode
 arm_64bit=1
 
