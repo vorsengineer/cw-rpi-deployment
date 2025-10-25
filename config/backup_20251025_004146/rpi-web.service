@@ -1,0 +1,38 @@
+[Unit]
+Description=RPi5 Deployment Web Management Interface
+Documentation=https://github.com/vorsengineer/cw-rpi-deployment
+After=network-online.target rpi-deployment.service
+Wants=network-online.target
+Requires=rpi-deployment.service
+
+[Service]
+Type=simple
+User=captureworks
+Group=captureworks
+WorkingDirectory=/opt/rpi-deployment/web
+ExecStart=/opt/rpi-deployment/web/venv/bin/python3 /opt/rpi-deployment/web/app.py
+
+# Environment variables
+Environment="PYTHONUNBUFFERED=1"
+Environment="FLASK_ENV=production"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rpi-web
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+
+# Security hardening (relaxed for file access)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=yes
+ReadWritePaths=/opt/rpi-deployment/logs /opt/rpi-deployment/database /opt/rpi-deployment/web/static/uploads
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

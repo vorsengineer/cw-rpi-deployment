@@ -1,0 +1,21 @@
+# Raspberry Pi 5 Network Boot Configuration
+# RPi5 Network Deployment System v2.0
+# Created: 2025-10-23
+
+[pi5]
+# Kernel to load (ARM64)
+kernel=kernel8.img
+
+# CRITICAL: Load initramfs into memory
+# The bootloader must load this BEFORE the kernel starts
+initramfs initrd.img followkernel
+
+# Enable 64-bit mode
+arm_64bit=1
+
+[all]
+# Enable UART for debugging (optional)
+enable_uart=1
+
+# Disable firmware compatibility check if needed
+# os_check=0

@@ -1,0 +1,252 @@
+# Raspberry Pi 5 Network Deployment System - Nginx Configuration
+# Dual Network Architecture: Management (VLAN 101) + Deployment (VLAN 151)
+# Created: 2025-10-23
+
+# ============================================================================
+# MANAGEMENT INTERFACE - 192.168.101.146:80 (VLAN 101)
+# Purpose: Web UI access, administration, monitoring
+# ============================================================================
+server {
+    listen 192.168.101.146:80;
+    server_name rpi-deployment.local cw-rpi-deployment01 192.168.101.146;
+
+    # Root directory (not heavily used, Flask serves most content)
+    root /var/www/deployment;
+
+    # Logging with detailed format
+    access_log /var/log/nginx/management-access.log combined;
+    error_log /var/log/nginx/management-error.log warn;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Large file uploads (master images up to 30GB - increased from 8GB for 27GB kxp2_master.img)
+    client_max_body_size 30G;
+    client_body_timeout 2400s;  # 40 minutes for large uploads
+    client_header_timeout 60s;
+
+    # ========================================================================
+    # Flask Web UI - Port 5000
+    # Real-time deployment monitoring, venue management, image uploads
+    # ========================================================================
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket support for real-time dashboard updates
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        # Timeouts for long-running operations (40 minutes for large uploads)
+        proxy_read_timeout 2400s;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 2400s;
+
+        # Buffering settings for large uploads
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    # ========================================================================
+    # Static Files - CSS, JS, Images
+    # Served directly by nginx for performance
+    # ========================================================================
+    location /static/ {
+        alias /opt/rpi-deployment/web/static/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+
+        # Gzip compression for text files
+        gzip on;
+        gzip_vary on;
+        gzip_types text/css text/javascript application/javascript application/json;
+        gzip_min_length 1000;
+    }
+
+    # ========================================================================
+    # Image Uploads Directory
+    # User-uploaded master images (up to 30GB - increased from 8GB)
+    # ========================================================================
+    location /uploads/ {
+        alias /opt/rpi-deployment/web/static/uploads/;
+        expires 7d;
+
+        # Allow large file uploads (30GB for 27GB master images)
+        client_max_body_size 30G;
+        client_body_timeout 2400s;  # 40 minutes
+
+        # Restrict direct access (only through Flask app)
+        internal;
+    }
+
+    # ========================================================================
+    # Management API Access (Optional - for future use)
+    # Access to deployment API from management network
+    # ========================================================================
+    location /api/ {
+        proxy_pass http://127.0.0.1:5001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Long timeouts for deployment operations (40 minutes)
+        proxy_read_timeout 2400s;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 2400s;
+
+        # Increased from 10M to 30G for consistency
+        client_max_body_size 30G;
+    }
+
+    # Health check endpoint
+    location /nginx-health {
+        access_log off;
+        return 200 "Management interface OK\n";
+        add_header Content-Type text/plain;
+    }
+}
+
+# ============================================================================
+# DEPLOYMENT INTERFACE - 192.168.151.1:80 (VLAN 151)
+# Purpose: Raspberry Pi image distribution, deployment operations
+# ============================================================================
+server {
+    listen 192.168.151.1:8888;
+    server_name _;  # Accept any hostname (Pis won't use DNS)
+
+    # CRITICAL: Disable ANY HTTPS redirects on deployment network
+    # Pis in netboot environment don't support HTTPS
+    # This must remain HTTP-only
+
+    # Root directory for static files
+    root /var/www/deployment;
+
+    # Logging with deployment-specific format
+    access_log /var/log/nginx/deployment-access.log combined;
+    error_log /var/log/nginx/deployment-error.log warn;
+
+    # Large file transfers (master images up to 30GB - increased from 8GB for 27GB kxp2_master.img)
+    client_max_body_size 30G;
+
+    # Long timeouts for slow SD card writes on Pis (40 minutes - increased from 10 minutes)
+    client_body_timeout 2400s;
+    client_header_timeout 60s;
+    send_timeout 2400s;
+
+    # Performance optimization for large file transfers
+    sendfile on;
+    sendfile_max_chunk 2m;
+    tcp_nopush on;
+    tcp_nodelay on;
+
+    # Disable buffering for streaming downloads
+    proxy_buffering off;
+    proxy_request_buffering off;
+
+    # ========================================================================
+    # Master Images Directory - PRIMARY DEPLOYMENT FUNCTION
+    # Serves .img files (up to 30GB) to Raspberry Pis during network boot
+    # ========================================================================
+    location /images/ {
+        alias /opt/rpi-deployment/images/;
+
+        # Security: No directory listing (only specific filenames)
+        autoindex off;
+
+        # Allow large file downloads (30GB for 27GB master images)
+        client_max_body_size 30G;
+
+        # Optimize for large sequential reads
+        sendfile on;
+        sendfile_max_chunk 2m;
+        tcp_nopush on;
+        tcp_nodelay on;
+
+        # Long timeouts for slow downloads (40 minutes)
+        send_timeout 2400s;
+
+        # Disable compression (images are already compressed)
+        gzip off;
+
+        # Cache control (images don't change often)
+        expires 7d;
+        add_header Cache-Control "public, must-revalidate";
+
+        # MIME type for .img files
+        types {
+            application/octet-stream img;
+        }
+        default_type application/octet-stream;
+    }
+
+    # ========================================================================
+    # Boot Files (Optional - mainly using TFTP)
+    # HTTP fallback for boot files if TFTP has issues
+    # ========================================================================
+    location /boot/ {
+        alias /tftpboot/;
+        autoindex on;  # Allow directory browsing for debugging
+
+        # Boot files are small, normal timeouts OK
+        expires 1d;
+    }
+
+    # ========================================================================
+    # Deployment API - Port 5001
+    # Hostname assignment, status reporting, configuration
+    # ========================================================================
+    location /api/ {
+        proxy_pass http://127.0.0.1:5001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Long timeouts for deployment operations (40 minutes)
+        proxy_read_timeout 2400s;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 2400s;
+
+        # Increased from 10M to 30G for consistency
+        client_max_body_size 30G;
+    }
+
+    # ========================================================================
+    # Health Check Endpoint - NEW
+    # Proxies to Flask deployment server /health endpoint
+    # ========================================================================
+    location /health {
+        proxy_pass http://127.0.0.1:5001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Quick health checks don't need long timeouts
+        proxy_read_timeout 10s;
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 10s;
+
+        # Health checks are small JSON responses
+        client_max_body_size 1M;
+    }
+
+    # Nginx health check endpoint (tests nginx only, not Flask)
+    location /nginx-health {
+        access_log off;
+        return 200 "Deployment interface OK\n";
+        add_header Content-Type text/plain;
+    }
+
+    # ========================================================================
+    # Root location - Simple info page
+    # ========================================================================
+    location = / {
+        return 200 "RPi Deployment Server - Deployment Interface\nFor image downloads: /images/<filename>\nFor API access: /api/\nHealth check: /health\n";
+        add_header Content-Type text/plain;
+    }
+}

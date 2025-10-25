@@ -197,7 +197,7 @@ def get_config():
             'hostname': hostname,
             'product_type': product_type,
             'venue_code': venue_code,
-            'image_url': f'http://{DEPLOYMENT_IP}/images/{image_info["filename"]}',
+            'image_url': f'http://{DEPLOYMENT_IP}:8888/images/{image_info["filename"]}',
             'image_size': image_info['size'],
             'image_checksum': image_info['checksum'],
             'version': '3.0',

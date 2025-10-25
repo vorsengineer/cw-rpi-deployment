@@ -99,9 +99,10 @@ def get_config(config_name: str = None) -> Config:
                     If None, uses FLASK_ENV environment variable or 'default'
 
     Returns:
-        Config: Configuration object
+        Config: Configuration object instance
     """
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', 'default')
 
-    return config.get(config_name, config['default'])
+    config_class = config.get(config_name, config['default'])
+    return config_class()  # Instantiate the class to call __init__

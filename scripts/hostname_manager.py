@@ -453,7 +453,7 @@ class HostnameManager:
 
     def list_venues(self) -> List[Dict[str, Any]]:
         """
-        Get list of all venues.
+        Get list of all venues with hostname statistics.
 
         Returns:
             List of dictionaries containing venue information:
@@ -461,15 +461,30 @@ class HostnameManager:
             - name: Venue name
             - location: Venue location
             - contact_email: Contact email
-            - created_date: Creation timestamp
+            - created_at: Creation timestamp
+            - kxp2_available: Number of available KXP2 hostnames
+            - kxp2_assigned: Number of assigned KXP2 hostnames
+            - rxp2_available: Number of available RXP2 hostnames
+            - rxp2_assigned: Number of assigned RXP2 hostnames
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
             cursor.execute("""
-                SELECT code, name, location, contact_email, created_at
-                FROM venues
-                ORDER BY code
+                SELECT
+                    v.code,
+                    v.name,
+                    v.location,
+                    v.contact_email,
+                    v.created_at,
+                    COALESCE(SUM(CASE WHEN h.product_type = 'KXP2' AND h.status = 'available' THEN 1 ELSE 0 END), 0) as kxp2_available,
+                    COALESCE(SUM(CASE WHEN h.product_type = 'KXP2' AND h.status = 'assigned' THEN 1 ELSE 0 END), 0) as kxp2_assigned,
+                    COALESCE(SUM(CASE WHEN h.product_type = 'RXP2' AND h.status = 'available' THEN 1 ELSE 0 END), 0) as rxp2_available,
+                    COALESCE(SUM(CASE WHEN h.product_type = 'RXP2' AND h.status = 'assigned' THEN 1 ELSE 0 END), 0) as rxp2_assigned
+                FROM venues v
+                LEFT JOIN hostname_pool h ON v.code = h.venue_code
+                GROUP BY v.code, v.name, v.location, v.contact_email, v.created_at
+                ORDER BY v.code
             """)
 
             venues = []
@@ -479,7 +494,11 @@ class HostnameManager:
                     'name': row['name'],
                     'location': row['location'],
                     'contact_email': row['contact_email'],
-                    'created_at': row['created_at']
+                    'created_at': row['created_at'],
+                    'kxp2_available': row['kxp2_available'],
+                    'kxp2_assigned': row['kxp2_assigned'],
+                    'rxp2_available': row['rxp2_available'],
+                    'rxp2_assigned': row['rxp2_assigned']
                 })
 
         return venues

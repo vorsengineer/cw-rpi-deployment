@@ -54,21 +54,27 @@ class PiInstaller:
         server_url: str,
         product_type: str = "KXP2",
         venue_code: Optional[str] = None,
-        target_device: str = "/dev/mmcblk0"
+        target_device: str = "/dev/mmcblk0",
+        no_reboot: bool = False,
+        skip_customize: bool = False
     ):
         """
         Initialize Pi installer.
 
         Args:
-            server_url: Deployment server URL (e.g., 'http://192.168.151.1:5001')
+            server_url: Deployment server URL (e.g., 'http://192.168.151.1:8888')
             product_type: Product type ('KXP2' or 'RXP2')
             venue_code: Optional 4-letter venue code
             target_device: Target device for image writing (default: /dev/mmcblk0)
+            no_reboot: Skip reboot at end (for testing)
+            skip_customize: Skip customization (for testing with mock devices)
         """
         self.server_url = server_url
         self.product_type = product_type
         self.venue_code = venue_code
         self.target_device = target_device
+        self.no_reboot = no_reboot
+        self.skip_customize = skip_customize
         self.hostname = None
         self.config = None
         self.setup_logging()
@@ -299,6 +305,10 @@ class PiInstaller:
         Creates firstrun.sh script on boot partition for hostname configuration
         on first boot.
         """
+        if self.skip_customize:
+            self.logger.info("Skipping customization (--skip-customize flag set)")
+            return
+
         self.logger.info("Customizing installation...")
 
         try:
@@ -352,6 +362,11 @@ rm -f /boot/firstrun.sh
 
     def reboot_system(self):
         """Reboot the system."""
+        if self.no_reboot:
+            self.logger.info("Installation complete! Skipping reboot (--no-reboot flag set)")
+            self.logger.info("=== Test deployment successful - exiting without reboot ===")
+            return
+
         self.logger.info("Installation complete! Rebooting...")
         time.sleep(3)
         subprocess.run(["reboot"])
@@ -423,16 +438,29 @@ def main():
                        help='Product type: KXP2 (KartXPro) or RXP2 (RaceXPro)')
     parser.add_argument('--venue', help='4-letter venue code (e.g., CORO)')
     parser.add_argument('--device', default='/dev/mmcblk0', help='Target device')
+    parser.add_argument('--no-reboot', action='store_true',
+                       help='Skip reboot at end (for testing)')
+    parser.add_argument('--skip-customize', action='store_true',
+                       help='Skip partition mounting and customization (for testing with mock devices)')
     args = parser.parse_args()
 
-    # Server runs on port 5001 for deployment network
-    server_url = f"http://{args.server}:5001" if ':' not in args.server else args.server
+    # Server runs on port 8888 for deployment network (port 8888 to avoid UniFi conflicts)
+    # Ensure server URL has http:// scheme
+    if not args.server.startswith(('http://', 'https://')):
+        server_url = f"http://{args.server}"
+        # Add default port 8888 if no port specified
+        if ':' not in args.server:
+            server_url += ':8888'
+    else:
+        server_url = args.server
 
     installer = PiInstaller(
         server_url,
         product_type=args.product,
         venue_code=args.venue,
-        target_device=args.device
+        target_device=args.device,
+        no_reboot=args.no_reboot,
+        skip_customize=args.skip_customize
     )
     installer.install()
 

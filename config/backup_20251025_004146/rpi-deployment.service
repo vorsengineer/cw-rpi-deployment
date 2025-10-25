@@ -1,0 +1,37 @@
+[Unit]
+Description=RPi5 Deployment Server API
+Documentation=https://github.com/vorsengineer/cw-rpi-deployment
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=captureworks
+Group=captureworks
+WorkingDirectory=/opt/rpi-deployment/scripts
+ExecStart=/usr/bin/python3 /opt/rpi-deployment/scripts/deployment_server.py
+
+# Environment variables
+Environment="PYTHONUNBUFFERED=1"
+Environment="FLASK_ENV=production"
+Environment="PYTHONPATH=/home/captureworks/.local/lib/python3.12/site-packages"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rpi-deployment
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ReadWritePaths=/opt/rpi-deployment/logs /opt/rpi-deployment/database /opt/rpi-deployment/images
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
